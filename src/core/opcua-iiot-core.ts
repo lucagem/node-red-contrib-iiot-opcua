@@ -46,6 +46,75 @@ import {WriteValueOptions} from "node-opcua-service-write";
 import {VariantOptions} from "node-opcua-variant";
 import {OPCUAClientOptions} from "node-opcua-client/dist/opcua_client";
 
+// Add this to src/core/opcua-iiot-core.ts
+
+/**
+ * Global OPC UA enable/disable state - checked once at startup
+ */
+let OPCUA_IIOT_ENABLED: boolean | null = null;
+
+/**
+ * Check if OPC UA IIoT nodes should be enabled based on environment variable
+ * IIOT_OPCUA_ENABLE - if set to "0", "false", "FALSE", "False" etc. disables all nodes
+ * @returns {boolean} true if nodes should be enabled, false if disabled
+ */
+export function isOpcUaIIoTEnabled(): boolean {
+  // Check only once at startup to avoid performance impact
+  if (OPCUA_IIOT_ENABLED === null) {
+    const envValue = process.env.IIOT_OPCUA_ENABLE;
+    
+    if (!envValue) {
+      // If variable not set, default to enabled
+      OPCUA_IIOT_ENABLED = true;
+    } else {
+      // Check for disabled values: 0, false, FALSE, False, etc.
+      const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off'];
+      OPCUA_IIOT_ENABLED = !disabledValues.includes(envValue.trim());
+    }
+    
+    // Log the state for debugging
+    internalDebugLog(`OPC UA IIoT nodes ${OPCUA_IIOT_ENABLED ? 'ENABLED' : 'DISABLED'} by environment variable IIOT_OPCUA_ENABLE=${envValue || 'undefined'}`);
+  }
+  
+  return OPCUA_IIOT_ENABLED;
+}
+
+/**
+ * Set node status to show disabled state with distinctive styling
+ * @param node Node to update status
+ */
+export function setNodeStatusToDisabled(node: any): void {
+  node.status({
+    fill: 'grey',
+    shape: 'dot',
+    text: 'disabled by env IIOT_OPCUA_ENABLE'
+  });
+}
+
+/**
+ * Check if node should process messages or pass through
+ * @param node Node to check
+ * @param msg Incoming message
+ * @param nodeType Node type name for logging
+ * @returns true if should process, false if should pass through
+ */
+export function shouldProcessMessage(node: any, msg: any, nodeType: string): boolean {
+  if (!isOpcUaIIoTEnabled()) {
+    // Set visual indicator that node is disabled
+    setNodeStatusToDisabled(node);
+    
+    // Log pass-through (only in debug mode to avoid spam)
+    detailDebugLog(`${nodeType} node passing through message - disabled by IIOT_OPCUA_ENABLE`);
+    
+    // Pass message through unchanged
+    node.send(msg);
+    
+    return false;
+  }
+  
+  return true;
+}
+
 export {Debug, os, underscore, nodeOPCUAId}
 
 export type ConnectorIIoT = {
