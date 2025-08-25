@@ -24,3 +24,7 @@ dist/
 
 *.log
 *.bak
+
+#lucat
+.lh/
+*.backup
