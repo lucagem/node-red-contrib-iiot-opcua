@@ -73,7 +73,7 @@ export function isOpcUaIIoTEnabled(): boolean {
     }
     
     // Log the state for debugging
-    internalDebugLog(`OPC UA IIoT nodes ${OPCUA_IIOT_ENABLED ? 'ENABLED' : 'DISABLED'} by environment variable IIOT_OPCUA_ENABLE=${envValue || 'undefined'}`);
+    logger.internalDebugLog(`OPC UA IIoT nodes ${OPCUA_IIOT_ENABLED ? 'ENABLED' : 'DISABLED'} by environment variable IIOT_OPCUA_ENABLE=${envValue || 'undefined'}`);
   }
   
   return OPCUA_IIOT_ENABLED;
@@ -104,7 +104,7 @@ export function shouldProcessMessage(node: any, msg: any, nodeType: string): boo
     setNodeStatusToDisabled(node);
     
     // Log pass-through (only in debug mode to avoid spam)
-    detailDebugLog(`${nodeType} node passing through message - disabled by IIOT_OPCUA_ENABLE`);
+    logger.detailDebugLog(`${nodeType} node passing through message - disabled by IIOT_OPCUA_ENABLE`);
     
     // Pass message through unchanged
     node.send(msg);
@@ -678,7 +678,7 @@ export function parseForNodeIdentifier(nodeItem: string): NodeIdentifier {
   }
   return {
     identifier: 'null',
-    type: 0x00
+    type: NodeIdType.STRING
   }
 }
 

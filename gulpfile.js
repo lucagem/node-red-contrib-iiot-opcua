@@ -21,11 +21,38 @@ function icons () {
 }
 
 function docIcons () {
-  return gulp.src('src/icons/**/*').pipe(gulp.dest('docs/gen/icons'))
+  return gulp.src('src/icons/**/*')
+    .pipe(gulp.dest('docs/gen/icons'))
+    .on('error', function (err) {
+      console.log('Warning: docIcons failed, skipping...', err.message)
+      this.emit('end')
+    })
 }
 
 function docImages () {
   return gulp.src('images/**/*').pipe(gulp.dest('docs/gen/images'))
+}
+
+// Assicuriamoci che le directory docs esistano
+function ensureDocsDir () {
+  const fs = require('fs')
+  const path = require('path')
+
+  const docsGenDir = path.join(__dirname, 'docs', 'gen')
+  const docsGenIconsDir = path.join(docsGenDir, 'icons')
+  const docsGenImagesDir = path.join(docsGenDir, 'images')
+
+  if (!fs.existsSync(docsGenDir)) {
+    fs.mkdirSync(docsGenDir, { recursive: true })
+  }
+  if (!fs.existsSync(docsGenIconsDir)) {
+    fs.mkdirSync(docsGenIconsDir, { recursive: true })
+  }
+  if (!fs.existsSync(docsGenImagesDir)) {
+    fs.mkdirSync(docsGenImagesDir, { recursive: true })
+  }
+
+  return Promise.resolve()
 }
 
 function locale () {
@@ -95,17 +122,13 @@ function doc (cb) {
     .pipe(jsdoc(cb))
 }
 
-// function code () {
-//   return gulp.src('src/**/*.ts')
-//     .pipe(babel({ presets: ['@babel/env'] }))
-//     .pipe(gulp.dest('code'))
-// }
-
-const docs = series(doc, docIcons, docImages)
+// Modifica la sequenza docs per assicurarsi che le directory esistano prima
+const docs = series(ensureDocsDir, doc, docIcons, docImages)
 const build = series(wipe, web, ts, locale, publics, icons)
 
 exports.docs = docs
 exports.clean = wipe
 exports.build = build
 exports.changelog = changelogUpdate
+exports.ensureDocsDir = ensureDocsDir
 exports.publish = parallel(build, maps, docs, changelogUpdate)
