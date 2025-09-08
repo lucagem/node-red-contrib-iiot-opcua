@@ -12,7 +12,8 @@ import * as nodered from "node-red";
 import {NodeMessageInFlow} from "node-red";
 import {TodoTypeAny} from "./types/placeholders";
 import coreInject from "./core/opcua-iiot-core-inject";
-import {resetIiotNode, IotOpcUaNodeMessage} from "./core/opcua-iiot-core";
+//LUCAT
+import {resetIiotNode, IotOpcUaNodeMessage, shouldProcessMessageWithConnectorDynamicEnable} from "./core/opcua-iiot-core";
 import {CronJob} from 'cron';
 import {AddressSpaceItem} from "./types/helpers";
 
@@ -170,6 +171,10 @@ module.exports = function (RED: nodered.NodeAPI) {
     }
 
     this.on('input', (msg: NodeMessageInFlow) => {
+      // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+        return // Il messaggio è già stato inoltrato dalla funzione
+      }        
       if (Object.keys(msg).length === 0) {
         // security: never use a completely empty message with any key, this is not a valid node-red msg than
         return;

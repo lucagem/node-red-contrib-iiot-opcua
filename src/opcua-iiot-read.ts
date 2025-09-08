@@ -20,7 +20,8 @@ import {
   initCoreNode,
   isInitializedIIoTNode,
   isSessionBad, registerToConnector,
-  resetIiotNode
+  resetIiotNode,
+  shouldProcessMessageWithConnectorDynamicEnable  // ← LUCAT
 } from "./core/opcua-iiot-core";
 import {ReadValueIdOptions} from "node-opcua-service-read";
 import {NodeIdLike} from "node-opcua-nodeid";
@@ -270,6 +271,10 @@ module.exports = (RED: NodeAPI) => {
     }
 
     this.on('input', function (msg: NodeMessageInFlow, send: (msg: NodeMessage | Array<NodeMessage | NodeMessage[] | null>) => void, done: () => void) {
+      // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+        return // Il messaggio è già stato inoltrato dalla funzione
+      }      
       if (!checkConnectorState(self, msg, 'Read', errorHandler, emitHandler, statusHandler)) {
         return
       }

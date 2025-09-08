@@ -23,7 +23,8 @@ import {
   isInitializedIIoTNode,
   isSessionBad,
   registerToConnector,
-  resetIiotNode
+  resetIiotNode,
+  shouldProcessMessageWithConnectorDynamicEnable  // LUCAT
 } from "./core/opcua-iiot-core";
 
 import {WriteValueOptions} from "node-opcua-service-write";
@@ -157,6 +158,10 @@ module.exports = (RED: NodeAPI) => {
     }
 
     this.on('input', (msg: NodeMessageInFlow) => {
+      // LUCAT - CONTROLLO DYNAMIC ENABLE
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Write')) {
+        return
+      }      
       if (!checkConnectorState(self, msg, 'Write', errorHandler, emitHandler, statusHandler)) {
         return
       }

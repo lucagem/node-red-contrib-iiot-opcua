@@ -13,7 +13,8 @@ import * as nodered from "node-red";
 import {NodeMessage, NodeStatus} from "node-red";
 import {TodoTypeAny} from "./types/placeholders";
 import coreServer from "./core/opcua-iiot-core-server";
-import {isInitializedIIoTNode, resetIiotNode, setNodeStatusTo} from "./core/opcua-iiot-core";
+// LUCAT
+import {isInitializedIIoTNode, resetIiotNode, setNodeStatusTo, shouldProcessMessageWithConnectorDynamicEnable} from "./core/opcua-iiot-core";
 
 
 type OPCUAIIoTServer = nodered.Node & {
@@ -98,6 +99,10 @@ module.exports = (RED: nodered.NodeAPI) => {
     initNewServer()
 
     this.on('input', (msg: TodoTypeAny) => {
+      // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+        return // Il messaggio è già stato inoltrato dalla funzione
+      }        
       if (!self.iiot.opcuaServer || !self.iiot.initialized) {
         handleServerError(new Error('Server Not Ready For Inputs'), msg)
         return

@@ -20,7 +20,8 @@ import {
   FAKTOR_SEC_TO_MSEC,
   registerToConnector,
   resetIiotNode,
-  setNodeStatusTo
+  setNodeStatusTo,
+  shouldProcessMessageWithConnectorDynamicEnable  // LUCAT
 } from "./core/opcua-iiot-core";
 import coreBrowser, {BrowserInputPayloadLike} from "./core/opcua-iiot-core-browser";
 import {Node, NodeAPI, NodeDef, NodeMessage, NodeStatus} from "node-red";
@@ -384,6 +385,10 @@ module.exports = (RED: nodered.NodeAPI) => {
     }
 
     this.on('input', function (msg: NodeMessageInFlow) {
+      // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+        return // Il messaggio è già stato inoltrato dalla funzione
+      }        
       const payload = msg.payload as enhancedPayload
       self.browseTopic = coreBrowser.extractNodeIdFromTopic(payload, self);
       payload._msgid = msg._msgid;

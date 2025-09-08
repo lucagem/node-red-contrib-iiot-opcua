@@ -10,13 +10,13 @@
 'use strict'
 // SOURCE-MAP-REQUIRED
 
-import {debug as Debug} from 'debug'
+import { debug as Debug } from 'debug'
 import * as os from 'os'
 import * as underscore from 'underscore'
-import _, {isObject} from 'underscore'
+import _, { isObject } from 'underscore'
 
 import * as nodeOPCUAId from 'node-opcua-nodeid'
-import {NodeIdLike} from 'node-opcua-nodeid'
+import { NodeIdLike } from 'node-opcua-nodeid'
 import {
   AddressSpaceItem,
   BrowseMessage,
@@ -27,10 +27,10 @@ import {
   TimeUnits,
   WriteMessage
 } from "../types/helpers";
-import {TodoTypeAny, TodoVoidFunction} from "../types/placeholders";
-import {Node, NodeMessage, NodeStatus} from "node-red";
-import {NodeMessageInFlow, NodeStatusFill, NodeStatusShape} from "@node-red/registry";
-import {isNotDefined} from "../types/assertion";
+import { TodoTypeAny, TodoVoidFunction } from "../types/placeholders";
+import { Node, NodeMessage, NodeStatus } from "node-red";
+import { NodeMessageInFlow, NodeStatusFill, NodeStatusShape } from "@node-red/registry";
+import { isNotDefined } from "../types/assertion";
 import {
   AttributeIds,
   ClientSession,
@@ -42,19 +42,19 @@ import {
   NodeIdType,
   OPCUAClient, OPCUADiscoveryServer, UserIdentityInfo,
 } from "node-opcua";
-import {WriteValueOptions} from "node-opcua-service-write";
-import {VariantOptions} from "node-opcua-variant";
-import {OPCUAClientOptions} from "node-opcua-client/dist/opcua_client";
+import { WriteValueOptions } from "node-opcua-service-write";
+import { VariantOptions } from "node-opcua-variant";
+import { OPCUAClientOptions } from "node-opcua-client/dist/opcua_client";
 
 // Add this to src/core/opcua-iiot-core.ts
 
 /**
- * Global OPC UA enable/disable state - checked once at startup
+ * LUCAT - Global OPC UA enable/disable state - checked once at startup
  */
 let OPCUA_IIOT_ENABLED: boolean | null = null;
 
 /**
- * Check if OPC UA IIoT nodes should be enabled based on environment variable
+ * LUCAT - Check if OPC UA IIoT nodes should be enabled based on environment variable
  * IIOT_OPCUA_ENABLE - if set to "0", "false", "FALSE", "False" etc. disables all nodes
  * @returns {boolean} true if nodes should be enabled, false if disabled
  */
@@ -62,7 +62,7 @@ export function isOpcUaIIoTEnabled(): boolean {
   // Check only once at startup to avoid performance impact
   if (OPCUA_IIOT_ENABLED === null) {
     const envValue = process.env.IIOT_OPCUA_ENABLE;
-    
+
     if (!envValue) {
       // If variable not set, default to enabled
       OPCUA_IIOT_ENABLED = true;
@@ -71,16 +71,16 @@ export function isOpcUaIIoTEnabled(): boolean {
       const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off'];
       OPCUA_IIOT_ENABLED = !disabledValues.includes(envValue.trim());
     }
-    
+
     // Log the state for debugging
     logger.internalDebugLog(`OPC UA IIoT nodes ${OPCUA_IIOT_ENABLED ? 'ENABLED' : 'DISABLED'} by environment variable IIOT_OPCUA_ENABLE=${envValue || 'undefined'}`);
   }
-  
+
   return OPCUA_IIOT_ENABLED;
 }
 
 /**
- * Set node status to show disabled state with distinctive styling
+ * LUCAT - Set node status to show disabled state with distinctive styling
  * @param node Node to update status
  */
 export function setNodeStatusToDisabled(node: any): void {
@@ -102,20 +102,104 @@ export function shouldProcessMessage(node: any, msg: any, nodeType: string): boo
   if (!isOpcUaIIoTEnabled()) {
     // Set visual indicator that node is disabled
     setNodeStatusToDisabled(node);
-    
+
     // Log pass-through (only in debug mode to avoid spam)
     logger.detailDebugLog(`${nodeType} node passing through message - disabled by IIOT_OPCUA_ENABLE`);
-    
+
     // Pass message through unchanged
     node.send(msg);
-    
+
     return false;
   }
-  
+
   return true;
 }
 
-export {Debug, os, underscore, nodeOPCUAId}
+/**
+ * Controlla se il connector del nodo ha dynamic-enable disabilitato
+ * @param node Nodo che sta processando il messaggio
+ * @param msg Messaggio in arrivo  
+ * @param nodeType Nome del tipo di nodo per logging
+ * @returns true se deve processare, false se deve passare attraverso
+ */
+export function shouldProcessMessageWithConnectorDynamicEnable(
+  node: any,
+  msg: any,
+  nodeType: string
+): boolean {
+  // Prima controlla la logica globale esistente
+  if (!shouldProcessMessage(node, msg, nodeType)) {
+    return false
+  }
+
+  // Poi controlla il dynamic-enable del connector
+  if (node.connector && node.connector.dynamicEnable !== undefined) {
+    const isConnectorEnabled = evaluateConnectorDynamicEnable(node.connector)
+
+    if (!isConnectorEnabled) {
+      // Imposta status visivo per indicare che il connector è disabilitato
+      setNodeStatusToConnectorDisabled(node)
+
+      // Log pass-through
+      logger.detailDebugLog(`${nodeType} node passing through message - connector disabled by dynamic-enable: ${node.connector.dynamicEnable}`)
+
+      // Passa messaggio attraverso unchanged
+      node.send(msg)
+
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Valuta se il connector è abilitato basandosi sul suo dynamic-enable
+ * @param connector Il nodo connector
+ * @returns true se abilitato, false se disabilitato
+ */
+function evaluateConnectorDynamicEnable(connector: any): boolean {
+  const value = (connector.dynamicEnable || "").trim()
+
+  // Se vuoto, usa la logica globale esistente
+  if (!value) {
+    return isOpcUaIIoTEnabled()
+  }
+
+  // Se è una variabile di ambiente (${...})
+  if (value.startsWith('${') && value.endsWith('}')) {
+    const envVar = value.slice(2, -1)
+    const envValue = process.env[envVar]
+
+    if (!envValue) return true // Default enabled
+
+    const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
+    return !disabledValues.includes(envValue.trim())
+  }
+
+  // Valori diretti
+  const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
+  const enabledValues = ['1', 'true', 'TRUE', 'True', 't', 'T', 'yes', 'YES', 'Yes', 'on', 'ON', 'On']
+
+  if (disabledValues.includes(value)) return false
+  if (enabledValues.includes(value)) return true
+
+  return true // Default enabled
+}
+
+/**
+ * Imposta status visivo per indicare che il connector è disabilitato
+ * @param node Nodo da aggiornare
+ */
+export function setNodeStatusToConnectorDisabled(node: any): void {
+  node.status({
+    fill: 'grey',
+    shape: 'dot',
+    text: 'connector disabled by dynamic-enable'
+  })
+}
+
+export { Debug, os, underscore, nodeOPCUAId }
 
 export type ConnectorIIoT = {
   endpoints: string[],
@@ -286,7 +370,7 @@ export function getNodeStatus(statusValue: string, statusLog: boolean): NodeStat
         statusValue = 'waiting ...'
       }
   }
-  return {fill: fillValue, shape: shapeValue, text: statusValue}
+  return { fill: fillValue, shape: shapeValue, text: statusValue }
 }
 
 function extractValue(value: any) {
@@ -457,31 +541,31 @@ export function getVariantValue(datatype: DataTypeInput, value: any): number | D
 
 export function getBasicDataTypes() {
   return [
-    {name: 'Null', dataType: DataType.Null},
-    {name: 'Boolean', dataType: DataType.Boolean},
-    {name: 'SByte', dataType: DataType.SByte},
-    {name: 'Byte', dataType: DataType.Byte},
-    {name: 'Int16', dataType: DataType.Int16},
-    {name: 'UInt16', dataType: DataType.UInt16},
-    {name: 'Int32', dataType: DataType.Int32},
-    {name: 'UInt32', dataType: DataType.UInt32},
-    {name: 'Int64', dataType: DataType.Int64},
-    {name: 'UInt64', dataType: DataType.UInt64},
-    {name: 'Float', dataType: DataType.Float},
-    {name: 'Double', dataType: DataType.Double},
-    {name: 'DateTime', dataType: DataType.DateTime},
-    {name: 'String', dataType: DataType.String},
-    {name: 'Guid', dataType: DataType.Guid},
-    {name: 'ByteString', dataType: DataType.ByteString},
-    {name: 'XmlElement', dataType: DataType.XmlElement},
-    {name: 'NodeId', dataType: DataType.NodeId},
-    {name: 'ExpandedNodeId', dataType: DataType.ExpandedNodeId},
-    {name: 'StatusCode', dataType: DataType.StatusCode},
-    {name: 'LocalizedText', dataType: DataType.LocalizedText},
-    {name: 'ExtensionObject', dataType: DataType.ExtensionObject},
-    {name: 'DataValue', dataType: DataType.DataValue},
-    {name: 'Variant', dataType: DataType.Variant},
-    {name: 'DiagnosticInfo', dataType: DataType.DiagnosticInfo}
+    { name: 'Null', dataType: DataType.Null },
+    { name: 'Boolean', dataType: DataType.Boolean },
+    { name: 'SByte', dataType: DataType.SByte },
+    { name: 'Byte', dataType: DataType.Byte },
+    { name: 'Int16', dataType: DataType.Int16 },
+    { name: 'UInt16', dataType: DataType.UInt16 },
+    { name: 'Int32', dataType: DataType.Int32 },
+    { name: 'UInt32', dataType: DataType.UInt32 },
+    { name: 'Int64', dataType: DataType.Int64 },
+    { name: 'UInt64', dataType: DataType.UInt64 },
+    { name: 'Float', dataType: DataType.Float },
+    { name: 'Double', dataType: DataType.Double },
+    { name: 'DateTime', dataType: DataType.DateTime },
+    { name: 'String', dataType: DataType.String },
+    { name: 'Guid', dataType: DataType.Guid },
+    { name: 'ByteString', dataType: DataType.ByteString },
+    { name: 'XmlElement', dataType: DataType.XmlElement },
+    { name: 'NodeId', dataType: DataType.NodeId },
+    { name: 'ExpandedNodeId', dataType: DataType.ExpandedNodeId },
+    { name: 'StatusCode', dataType: DataType.StatusCode },
+    { name: 'LocalizedText', dataType: DataType.LocalizedText },
+    { name: 'ExtensionObject', dataType: DataType.ExtensionObject },
+    { name: 'DataValue', dataType: DataType.DataValue },
+    { name: 'Variant', dataType: DataType.Variant },
+    { name: 'DiagnosticInfo', dataType: DataType.DiagnosticInfo }
   ]
 }
 
@@ -607,7 +691,7 @@ export function convertDataValueByDataType(value: any, dataType: DataTypeInput):
         break;
       default:
         logger.internalDebugLog('convertDataValue unused DataType: ' + dataType)
-        if(_.isUndefined(value)) {
+        if (_.isUndefined(value)) {
           convertedValue = null
         } else {
           convertedValue = value
@@ -640,7 +724,7 @@ export function parseNamespaceFromItemNodeId(item: NodeIdLike): number | undefin
     return 0;
   }
 
-  if(isObject(item) && item.namespace) {
+  if (isObject(item) && item.namespace) {
     return item.namespace
   }
 
@@ -725,7 +809,7 @@ export function normalizeMessage(msg: WriteMessage) {
 
   if (!isNotDefined(writeValues)) {
     return addressSpaceValues.map((item, index) => {
-      return {...item, value: _.isUndefined(writeValues[index]) ? null : writeValues[index]}
+      return { ...item, value: _.isUndefined(writeValues[index]) ? null : writeValues[index] }
     })
   } else
     return addressSpaceValues.map((item, index) => {
@@ -747,7 +831,7 @@ export function buildNodesToWrite(msg: WriteMessage): WriteValueOptions[] {
 
   const nodesToWrite = writeInputs.map((item: TodoTypeAny) =>
     createItemForWriteList(item, buildNewVariant(item.datatypeName, item.value)
-  ));
+    ));
 
   logger.internalDebugLog('buildNodesToWrite output: ' + JSON.stringify(nodesToWrite))
 
@@ -772,14 +856,14 @@ export function buildNodesToRead(payload: TodoTypeAny) {
 
   */
 
-  let nodePayloadList:Array<AddressSpaceItem> = payload.nodesToRead || payload.nodesToWrite || payload.crawlerResults || payload.browserResults || injectArrayOfNodeIds;
+  let nodePayloadList: Array<AddressSpaceItem> = payload.nodesToRead || payload.nodesToWrite || payload.crawlerResults || payload.browserResults || injectArrayOfNodeIds;
 
   if (nodePayloadList && nodePayloadList.length) {
     return nodePayloadList.map((item: AddressSpaceItem) => {
       return item
     })
   } else {
-    let nodeList:Array<AddressSpaceItem> = payload.nodesToRead || payload.nodesToWrite
+    let nodeList: Array<AddressSpaceItem> = payload.nodesToRead || payload.nodesToWrite
     if (nodeList && nodeList.length) {
       // legacy
       return nodeList.map((item: AddressSpaceItem) => {
@@ -980,7 +1064,7 @@ export function registerToConnector(node: TodoTypeAny, statusCallback: (status: 
   }
 
   if (isNotDefined(node.connector)) {
-    errorHandler(new Error('Connector Config Node Not Valid On Registering Client Node ' + (node as unknown as Node).id), {payload: 'No Connector Configured'})
+    errorHandler(new Error('Connector Config Node Not Valid On Registering Client Node ' + (node as unknown as Node).id), { payload: 'No Connector Configured' })
     return
   }
   if (!node.connector.statusCallbacks) {
@@ -1058,7 +1142,7 @@ export function deregisterToConnector(node: NodeWithConnector, done: () => void)
   }
 
   if (!node.connector) {
-    node.error(new Error('Connector Not Valid On Register To Connector'), {payload: 'No Connector Configured'})
+    node.error(new Error('Connector Not Valid On Register To Connector'), { payload: 'No Connector Configured' })
     done()
     return
   }
@@ -1151,7 +1235,7 @@ export function getItemFilterValueWithElement(item: TodoTypeAny, element: TodoTy
 export function handleErrorInsideNode(node: TodoTypeAny, err: Error) {
   logger.internalDebugLog(typeof node + ' ' + err.message)
   if (node.showErrors) {
-    node.error(err, {payload: err.message})
+    node.error(err, { payload: err.message })
   }
 }
 
@@ -1240,10 +1324,10 @@ export function resetIiotNode(node: TodoTypeAny) {
   // Valid hirarchy is supposed to be: Core -> CoreSpecific (CoreListener, CoreConnector, ...) -> Specific (Listener, Browser, ...)
   // This is because looped imports and usages before declaration can happen if this is not kept in mind
 
-  if(_.isObject(node) == false || _.isEmpty(node.iiot)) {
+  if (_.isObject(node) == false || _.isEmpty(node.iiot)) {
     return
   } else {
-    if(_.isFunction(node.resetAllTimer)) {
+    if (_.isFunction(node.resetAllTimer)) {
       node.resetAllTimer() // call to close all timer otherwise it stops until timeout and node-red hangs on
     }
   }

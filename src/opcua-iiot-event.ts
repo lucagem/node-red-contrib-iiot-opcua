@@ -18,7 +18,8 @@ import coreListener from "./core/opcua-iiot-core-listener";
 import {InjectPayload} from "./opcua-iiot-inject";
 import {BrowserPayload} from "./opcua-iiot-browser";
 import {Like} from "./types/helpers";
-import {IotOpcUaNodeMessage} from "./core/opcua-iiot-core";
+// LUCAT
+import {IotOpcUaNodeMessage, shouldProcessMessageWithConnectorDynamicEnable} from "./core/opcua-iiot-core";
 
 interface OPCUAIIoTEvent extends nodered.Node {
   eventType: string
@@ -85,6 +86,10 @@ module.exports = function (RED: nodered.NodeAPI) {
 
     statusCall({fill: 'blue', shape: 'ring', text: 'new'})
     this.on('input', (msg: NodeMessageInFlow) => {
+      // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+        return // Il messaggio è già stato inoltrato dalla funzione
+      }        
       self.iiot.subscribed = !self.iiot.subscribed
 
       if (self.usingListener) {

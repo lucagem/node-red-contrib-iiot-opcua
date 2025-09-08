@@ -12,7 +12,8 @@
 import * as nodered from "node-red";
 import {TodoTypeAny} from "./types/placeholders";
 import {NodeMessageInFlow} from "@node-red/registry";
-import {convertDataValueByDataType} from "./core/opcua-iiot-core";
+// LUCAT
+import {convertDataValueByDataType, shouldProcessMessageWithConnectorDynamicEnable} from "./core/opcua-iiot-core";
 import {logger} from "./core/opcua-iiot-core-connector";
 import _ from "underscore";
 
@@ -75,7 +76,10 @@ module.exports = (RED: nodered.NodeAPI) => {
     }
 
     this.on('input', (msg: NodeMessageInFlow) => {
-
+      // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+        return // Il messaggio è già stato inoltrato dalla funzione
+      }  
       self.toggleNodeStatusSymbol();
 
       const topic = msg.topic || self.topic
