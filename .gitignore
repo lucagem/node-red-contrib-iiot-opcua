@@ -28,3 +28,7 @@ dist/
 #lucat
 .lh/
 *.backup
+built/
+node-red-test/
+.vscode/settings.json
+*.pem

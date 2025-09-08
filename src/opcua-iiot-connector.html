@@ -12,33 +12,34 @@
   RED.nodes.registerType('OPCUA-IIoT-Connector', {
     category: 'config',
     defaults: {
-      discoveryUrl: {value: ''},
-      endpoint: {value: "opc.tcp://localhost:55388/", required: true},
-      endpointMustExist: {value: false},
-      keepSessionAlive: {value: true},
-      loginEnabled: {value: false},
-      name: {value: "LOCAL SERVER"},
-      showErrors: {value: false},
-      securityPolicy: {value: 'None', required: true},
-      securityMode: {value: 'None', required: true},
-      individualCerts: {value: false},
-      publicCertificateFile: {value: ''},
-      privateKeyFile: {value: ''},
-      defaultSecureTokenLifetime: {value: ''},
-      autoSelectRightEndpoint: {value: false},
-      strategyMaxRetry: {value: ''},
-      strategyInitialDelay: {value: ''},
-      strategyMaxDelay: {value: ''},
-      strategyRandomisationFactor: {value: ''},
-      requestedSessionTimeout: {value: ''},
-      connectionStartDelay: {value: ''},
+      discoveryUrl: { value: '' },
+      endpoint: { value: "opc.tcp://localhost:55388/", required: true },
+      endpointMustExist: { value: false },
+      keepSessionAlive: { value: true },
+      loginEnabled: { value: false },
+      name: { value: "LOCAL SERVER" },
+      dynamicEnable: { value: "" }, // LUCAT
+      showErrors: { value: false },
+      securityPolicy: { value: 'None', required: true },
+      securityMode: { value: 'None', required: true },
+      individualCerts: { value: false },
+      publicCertificateFile: { value: '' },
+      privateKeyFile: { value: '' },
+      defaultSecureTokenLifetime: { value: '' },
+      autoSelectRightEndpoint: { value: false },
+      strategyMaxRetry: { value: '' },
+      strategyInitialDelay: { value: '' },
+      strategyMaxDelay: { value: '' },
+      strategyRandomisationFactor: { value: '' },
+      requestedSessionTimeout: { value: '' },
+      connectionStartDelay: { value: '' },
       //connectionStopDelay: {value: ''}, //Todo: check missing default assignment for constants.
-      reconnectDelay: {value: ''},
-      maxBadSessionRequests: {value: 10}
+      reconnectDelay: { value: '' },
+      maxBadSessionRequests: { value: 10 }
     },
     credentials: {
-      user: {type: "text"},
-      password: {type: "password"}
+      user: { type: "text" },
+      password: { type: "password" }
     },
     label: function () {
       return this.name || this.endpoint;
@@ -243,6 +244,16 @@
                 <span data-i18n="node-red:common.label.name"></span></label>
                 <input type="text" id="node-config-input-name" placeholder="Name">
             </div>
+            <!-- LUCAT -->
+            <div class="form-row">
+                <label for="node-config-input-dynamicEnable"><i class="fa fa-power-off"></i> Dynamic Enable</label>
+                <input type="text" id="node-config-input-dynamicEnable" placeholder="Leave empty, 0/false=Disable, 1/true=Enable, ${ENV_VAR}" style="min-width:480px">
+            </div>
+            <div class="form-row">
+                <label style="font-size: 11px; color: #666; min-width:480px;">
+                    Accepts: empty (uses global env), 0/false (disable), 1/true (enable), ${IIOT_OPCUA_ENABLE} (env variable)
+                </label>
+            </div>         
             <hr>
             <div class="form-row">
                 <label style="min-width:160px" for="node-config-input-showErrors"><i class="fa fa-exclamation-circle"></i>

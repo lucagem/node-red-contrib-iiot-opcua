@@ -46,6 +46,8 @@ import detailDebugLog = logger.detailDebugLog;
 import {getEnumKeys} from "./types/helpers";
 import {createMachine, interpret} from "@xstate/fsm"
 import {TodoTypeAny} from "./types/placeholders";
+//LUCAT
+import { isOpcUaIIoTEnabled, setNodeStatusToDisabled } from './core/opcua-iiot-core'
 
 interface OPCUAIIoTConnectorCredentials {
   user: string
@@ -60,6 +62,7 @@ export type OPCUAIIoTConnectorNode = nodered.Node<OPCUAIIoTConnectorCredentials>
   securityPolicy: SecurityPolicy
   messageSecurityMode: MessageSecurityMode
   name: string
+  dynamicEnable: string  // LUCAT
   showErrors: boolean
   individualCerts: boolean
   publicCertificateFile: string | null
@@ -97,6 +100,7 @@ interface OPCUAIIoTConnectorConfigurationDef extends nodered.NodeDef {
   securityPolicy: string
   securityMode: string
   name: string
+  dynamicEnable: string  // LUCAT
   showErrors: boolean
   individualCerts: boolean
   publicCertificateFile: string
@@ -138,6 +142,7 @@ module.exports = function (RED: nodered.NodeAPI) {
     this.keepSessionAlive = config.keepSessionAlive
     this.loginEnabled = config.loginEnabled
     this.name = config.name
+    this.dynamicEnable = config.dynamicEnable || ""  // LUCAT
     this.showErrors = config.showErrors
     this.securityPolicy = coerceSecurityPolicy(config.securityPolicy)
     this.messageSecurityMode = coerceMessageSecurityMode(config.securityMode) || MessageSecurityMode.None
@@ -155,6 +160,41 @@ module.exports = function (RED: nodered.NodeAPI) {
     this.reconnectDelay = config.reconnectDelay || RECONNECT_DELAY
     this.connectionStopDelay = config.connectionStopDelay || CONNECTION_STOP_DELAY
     this.maxBadSessionRequests = parseInt(config.maxBadSessionRequests?.toString()) || 10
+
+    // LUCAT
+    const evaluateDynamicEnable = (): boolean => {
+      const value = this.dynamicEnable.trim()
+      
+      // Se vuoto, usa la logica esistente (variabile ambiente globale)
+      if (!value) {
+        return isOpcUaIIoTEnabled()
+      }
+      
+      // Se è una variabile di ambiente (${...})
+      if (value.startsWith('${') && value.endsWith('}')) {
+        const envVar = value.slice(2, -1) // Rimuove ${ e }
+        const envValue = process.env[envVar]
+        
+        if (!envValue) return true // Default enabled se variabile non esiste
+        
+        const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
+        return !disabledValues.includes(envValue.trim())
+      }
+      
+      // Valori diretti
+      const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
+      const enabledValues = ['1', 'true', 'TRUE', 'True', 't', 'T', 'yes', 'YES', 'Yes', 'on', 'ON', 'On']
+      
+      if (disabledValues.includes(value)) return false
+      if (enabledValues.includes(value)) return true
+      
+      return true // Default enabled per valori non riconosciuti
+    }    
+    // LUCAT - return if not enabled!
+    if (!evaluateDynamicEnable()) {
+      setNodeStatusToDisabled(this as any)
+      return // <-- Se arriva qui, tutto il resto viene saltato
+    }
 
     this.iiot = coreConnector.initConnectorNode()
 
