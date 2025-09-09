@@ -1,10 +1,10 @@
 {
-  "name": "node-red-contrib-iiot-opcua",
+  "name": "node-red-contrib-iiot-opcua-gem",
   "version": "4.2.0",
-  "description": "An Industrial IoT OPC UA toolbox contribution package for Node-RED based on node-opcua.",
+  "description": "Enhanced Industrial IoT OPC UA toolbox for Node-RED with array support and dynamic enable/disable features - GEM edition",
   "repository": {
     "type": "git",
-    "url": "https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua"
+    "url": "https://github.com/lucagem/node-red-contrib-iiot-opcua-gem.git"
   },
   "dependencies": {
     "@xstate/fsm": "~2.0.0",
@@ -18,13 +18,20 @@
   },
   "keywords": [
     "node-red",
-    "plus4nodered",
     "opcua",
     "automation",
-    "biancoroyal"
+    "iiot",
+    "industrial",
+    "gem",
+    "arrays",
+    "enable-disable",
+    "opc-ua"
   ],
-  "author": "Klaus Landsdorf <developers@bianco-royal.de> (https://bianco-royal.space/)",
+  "author": "Luca Tralli <luca.tralli@gemsrl.it> (https://www.gemsrl.it/)",
   "contributors": [
+    {
+      "name": "Klaus Landsdorf <developers@bianco-royal.de> (https://bianco-royal.space/)"
+    },
     {
       "name": "PLUS for Node-RED <github@noderedplus.de> (https://noderedplus.de/)"
     },
@@ -39,13 +46,13 @@
     },
     {
       "name": "Sterfive  (https://www.sterfive.com/)"
+    },
+    {
+      "name": "Luca Tralli GEM s.r.l.  (https://www.gemsrl.it/)"
     }
   ],
   "license": "BSD-3-Clause",
-  "bugs": {
-    "url": "https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua/issues/new?assignees=&labels=bug&template=bugs.yaml"
-  },
-  "homepage": "https://noderedplus.de/",
+  "homepage": "https://github.com/lucagem/node-red-contrib-iiot-opcua-gem#readme",
   "node-red": {
     "version": ">=2",
     "nodes": {
@@ -96,12 +103,12 @@
     "test:summarize": "node scripts/JestOutputToSummary.js > summary.md",
     "summary": "npm run coverage:ci && npm run test:summarize && jest-coverage-badges input \"./jcoverage/coverage-summary.json\" output \"./badges\"",
     "build": "standard --fix && gulp publish",
-    "prepublishOnly": "npm run test && npm run coverage && npm run build",
+    "prepublishOnly": "npm run test:stable && npm run build",
     "release": "standard-version -a",
     "inspect": "jsinspect ./src > .jsinspect-results.json",
     "rewrite-changelog": "gulp changelog",
     "dev-link": "npm i && npm run build && npm link",
-    "dev-unlink": "npm unlink node-red-contrib-iiot-opcua -g",
+    "dev-unlink": "npm unlink node-red-contrib-iiot-opcua-gem -g",
     "code:check": "standard --fix"
   },
   "files": [

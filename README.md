@@ -1,161 +1,149 @@
+# node-red-contrib-iiot-opcua-gem
 
-# node-red-contrib-iiot-opcua 
+**Enhanced Industrial IoT OPC UA toolbox for Node-RED with array support and dynamic enable/disable features - GEM edition**
 
-![Platform Node-RED](https://img.shields.io/badge/Platform-Node--RED-red.png)
-![Node-RED IIoT OPC UA](https://img.shields.io/badge/Node--RED-IIoT_OPC_UA-blue.png)
-![License](https://img.shields.io/badge/License-BSD--3-orange.png)
-[![NPM version](https://badge.fury.io/js/node-red-contrib-iiot-opcua.png)](https://www.npmjs.com/package/node-red-contrib-iiot-opcua)
-![ES_Deploy_Version](https://img.shields.io/badge/TypeScript-4.6.4-yellow.png)
-![NodeJS_Version](https://img.shields.io/badge/NodeJS-14.19.1-green.png)
-[![Standard - JavaScript Style Guide](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
-[![NPM download](https://img.shields.io/npm/dm/node-red-contrib-iiot-opcua.svg)](https://www.npmtrends.com/node-red-contrib-iiot-opcua)
-[![Build status](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua/actions/workflows/build.yml/badge.svg)](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua/actions/workflows/build.yml)
-[![Test Coverage](badges/badge-lines.svg)](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua/actions/workflows/summary.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/9a7257e1cd3c4b8ca4a3f8b30c00a78a)](https://www.codacy.com/gh/BiancoRoyal/node-red-contrib-iiot-opcua/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=BiancoRoyal/node-red-contrib-iiot-opcua&amp;utm_campaign=Badge_Grade)
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua)
+Based on the excellent [node-red-contrib-iiot-opcua](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua) by Klaus Landsdorf, this enhanced version adds powerful new capabilities for industrial automation scenarios.
 
-## The IoT/IIoT OPC UA toolbox package for [Node-RED][3] based on [node-opcua][4]
+## 🆕 New Features (GEM Edition)
 
-* tested with Node.js v16.15 and Node-RED v3.0.0
-* tested with Node.js v14.19 and Node-RED v2.2.2
-* based on node-opcua v2.64
+### 🔧 Dynamic Enable/Disable System
+Control OPC-UA nodes dynamically through environment variables or static values:
 
-The actual [DATATRONiQ][5] and [Iniationware][6] contributions to v4.x+ upgrade the original work of v3.x by migrating to TypeScript, breaking-changes,
-and updating dependencies, including updates to new major release versions of Node-RED (v1.x to v2.x and higher) and node-opcua (v0.7 to v2.64 and higher).
-Now [DATATRONiQ][5] and [Iniationware][6] working together and try to build a community from the industry and individuals to provide an LTS Industrial IoT package for OPC UA.
+- **Global Control**: Set `IIOT_OPCUA_ENABLE=false` to disable all nodes
+- **Per-Node Control**: Individual Dynamic Enable field in Connector configuration
+- **Flexible Values**: Supports `true/false`, `1/0`, `on/off`, `yes/no`, and custom environment variables like `${MY_OPCUA_ENABLE}`
+- **Runtime Control**: Enable/disable nodes without code changes
 
-## International IIoT Website for Node-RED 
+### 📊 Enhanced Array Support
+Extended support for OPC-UA array data types:
 
-For an international area, [Iniationware][6] has provided the [PLUS for Node-RED International][8] website.
+- **Multiple Array Types**: Support for various array configurations
+- **Improved Data Handling**: Better parsing and processing of array values
+- **Type Safety**: Enhanced TypeScript definitions for array operations
 
-## IIoT Webseite Deutschland für Node-RED 
+## 📦 Installation
 
-Für einen deutschsprachigen Bereich hat [Iniationware][6] die Webseite [PLUS for Node-RED Germany][7] bereitgestellt.
+```bash
+npm install node-red-contrib-iiot-opcua-gem
+```
 
-## Installing
+## 🚀 Quick Start
 
-### Node-RED
-   Use the Node-RED "Manage Pallet" to install it via Node-RED
+1. **Install the package** in your Node-RED environment
+2. **Drag OPC-UA IIoT nodes** from the palette to your flow
+3. **Configure Connector** with your OPC-UA server details
+4. **Set Dynamic Enable** (optional) for conditional node operation
+5. **Deploy and connect** to your OPC-UA server
 
-### Manual
+### Dynamic Enable Configuration
 
-1. Navigate to your Node-RED data directly. This defaults to `$HOME/.node-red/`
-2. Install via npm.
-   ```shell
-   npm install node-red-contrib-iiot-opcua
-   ```
+In the **OPCUA-IIoT-Connector** configuration:
 
-## Migrating from previous versions
+- **Empty**: Uses global `IIOT_OPCUA_ENABLE` environment variable
+- **Static values**: `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no`
+- **Environment variables**: `${MY_CUSTOM_VAR}`, `${PRODUCTION_MODE}`, etc.
 
-The update from v3.x to v4.x changed the way some nodes are implemented.
-As a major version v4.x has breaking-changes. 
+**Examples:**
+```bash
+# Global disable
+export IIOT_OPCUA_ENABLE=false
 
-### General Changes
+# Custom per-environment
+export PRODUCTION_MODE=true
+# Then use ${PRODUCTION_MODE} in Dynamic Enable field
+```
 
-- The message format was standardized. While in older versions, a lot of additional properties were placed directly into the message,
-they have been moved into the message's payload (`msg.payload`). This is to ensure the standard Node-RED message format is used, where the message
-itself may only contain an ID, a topic, and a payload. This means that any references like `msg.nodetype` should be changed to `msg.payload.nodetype`.
+## 📋 Available Nodes
 
-### Browser
+- **OPCUA-IIoT-Connector** - Server connection with dynamic enable
+- **OPCUA-IIoT-Inject** - Inject data with array support
+- **OPCUA-IIoT-Read** - Read values and arrays
+- **OPCUA-IIoT-Write** - Write values and arrays
+- **OPCUA-IIoT-Listener** - Monitor changes
+- **OPCUA-IIoT-Browser** - Browse address space
+- **OPCUA-IIoT-Server** - Create OPC-UA server
+- **OPCUA-IIoT-Method-Caller** - Call OPC-UA methods
+- And more...
 
-- The option `singleBrowseResult` has been replaced with `multipleOutputs`, and the default value now combines all outputs into one message. To maintain the same output, replace `singleBrowseResult` with `multipleOutputs` and swap the corresponding boolean value (true becomes false, false becomes true).
+## 🏭 Use Cases
 
-### Flex-Server
+### Industrial Automation
+- **Production Lines**: Monitor PLCs with conditional connectivity
+- **Quality Control**: Array-based sensor data collection
+- **Environment Control**: Enable/disable based on operational status
 
-- The `node-opcua` library is now directly accessible as `opcua`. This means all references to `coreServer.core.nodeOPCUA` should be replaced with `opcua`.
-- `node.iiot.assert` is no longer accessible. The functionality can be replaced by using an `if` statement that throws a new error (`if (errorConfition) throw new Error('Error Message'`). Errors can be displayed by using a `catch` node connected to a `debug` node, which displys the entire message.
+### Development & Testing
+- **Staging Environments**: Use environment variables to control connections
+- **Integration Testing**: Programmatic enable/disable of OPC-UA connectivity
+- **Multi-tenant Deployments**: Per-tenant OPC-UA configuration
 
+## 🛠️ Environment Variables
 
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `IIOT_OPCUA_ENABLE` | Global enable/disable for all nodes | `true` |
+| Custom variables | Use `${VARIABLE_NAME}` in Dynamic Enable field | - |
 
-## Contributing
+**Accepted Values:** `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no` (case-insensitive)
 
-Every bit helps! If you come across any bugs, 
-please [send a bug report](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua/issues/new?type=bug), 
-or if you feel inclined to fix it yourself, [submit a pull request](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua/compare).
+## 📚 Examples
 
-### Debugging
+### Basic Connection with Dynamic Enable
 
-To increase the verbosity of logging, enable debug modes and verbose logging.
+```javascript
+// Environment
+process.env.PRODUCTION_READY = "true";
 
-Start debug with Node-RED in verbose (-v) mode to get a verbose logging:
+// In Connector Dynamic Enable field: ${PRODUCTION_READY}
+// Node will only connect when PRODUCTION_READY=true
+```
 
-    DEBUG=opcuaIIoT* npm run start -v 1>nodeREDIIoTOPCUA.log 2>&1
+### Array Data Handling
 
+Enhanced support for reading and writing array values from/to OPC-UA servers, with improved type safety and error handling.
 
+## 🔗 Original Project
 
-## Examples
+This project is based on **node-red-contrib-iiot-opcua** by Klaus Landsdorf and contributors:
+- Original repository: https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua
+- Documentation: https://noderedplus.de/
 
-### Basic Flow
+## 🏢 About GEM s.r.l.
 
-![Flow Example](images/wiki/browser-listener-flow3-active.png)
+Enhanced by [GEM s.r.l.](https://www.gemsrl.it/) for industrial automation and IoT applications.
 
-### Your own address space model!
+**Enhancements by:** Luca Tralli  
+**Company:** GEM s.r.l.  
+**Website:** https://www.gemsrl.it/
 
-With the flex server you could create your own information model with the OPC UA address space.
+## 📄 License
 
-![Flex server Example](images/wiki/flexServerAddressSapceExamplev3.png)
+BSD-3-Clause (same as original project)
 
-### Learn with the examples!
+## 🤝 Contributing
 
-The server node contains demo objects and variables
-to start playing with OPC UA method call, read and write operations.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-see Node-RED menu (right upper corner) -> Import -> Examples -> iiot opcua
+## 📞 Support
 
-![Flow Example](images/wiki/method-call3-active.png)
+- **Issues**: Please report bugs and feature requests on GitHub
+- **Documentation**: Check the original project documentation
+- **Community**: Node-RED community forums
 
-**... secure reading from OPC UA servers with your own key pairs ...**
+## 🔄 Version History
 
-![Read Example](images/wiki/read-history3-active.png)
+### v4.2.0 (Current)
+- ✨ Added Dynamic Enable/Disable functionality
+- 📊 Enhanced array support for various data types
+- 🏷️ GEM edition branding and documentation
+- 🔧 Improved TypeScript definitions
 
-**... and secure writing and moving data between OPC UA servers ...**
+Based on **node-red-contrib-iiot-opcua v4.2.0** with additional enhancements.
 
-![Write Example](images/wiki/write-flow3-active.png)
+---
 
-![Read Write Example](images/wiki/write-read-flow3.png)
-
-**... create your own variables and objects from events ...**
-
-| Node-RED                                         | UAExpert / Client                                         |
-|--------------------------------------------------|-----------------------------------------------------------|
-| ![ASO Example](images/wiki/server-aso-flow3.png) | ![ASO UAExpert](images/wiki/ASOTestVariablesUAExpert.png) |
-
-### Reconnect via events with the Flex Connector!
-
-![Flow Flex Connector](images/wiki/flex-connector-flow31.png)
-
-## Package Information
-
-### License
-
-The BSD 3-Clause License
-
-[DATATRONiQ][5], is the current maintainer 
-of the [DATATRONiQ node-red-contrib-iiot-opcua detached Fork](https://github.com/DATATRONiQ/node-red-contrib-iiot-opcua)
-
-This Node-RED package has been revitalized in 2022 and is based on the node-red-contrib-iiot-opcua package created by [Klaus Landsdorf][1] in 2017.
-Copyright notices by Mika Karaila, Klaus Landsdorf, and others are to honor their work in previous years on Node-RED, 
-OPC-UA, and node-red-contrib-iiot-opcua; we are very grateful for all the time and energy they've invested!!
-
-[Klaus Landsdorf][1], creator and current maintainer of the Bianco-Royal node-red-contrib-iiot-opcua
-
-That is a whole new Node-RED package started in 2017 based on the node-opcua v0.4 and the API documentation.
-The old copyrights by Mika Karaila are just to honor his pioneer work in the years 2015/2016 for Node-RED and OPC UA.
-
-### Important
-
-This is **not** an official product of the OPC Foundation or Plattform Industrie 4.0.
-
-### Special thanks
-
-Special thanks go to [Etienne Rossignon][2] for the [node-opcua][4] packages and very special for the node-opcua-isa95 package!
-Special thanks also go to [Klaus Landsdorf][1] for creating _node-red-contrib-iiot-opcua_ in the first place!
-
-[1]:https://github.com/biancode
-[2]:https://github.com/erossignon
-[3]:https://github.com/node-red/node-red
-[4]:https://github.com/node-opcua/node-opcua
-[5]:https://github.com/DATATRONiQ
-[6]:https://iniationware.com/
-[7]:https://plus4nodered.com/de/
-[8]:https://plus4nodered.com/
+**Made with ❤️ for the industrial automation community**
