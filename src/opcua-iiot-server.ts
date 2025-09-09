@@ -10,11 +10,11 @@
 'use strict'
 
 import * as nodered from "node-red";
-import {NodeMessage, NodeStatus} from "node-red";
+import {NodeMessage, NodeStatus, NodeMessageInFlow} from "node-red";
 import {TodoTypeAny} from "./types/placeholders";
 import coreServer from "./core/opcua-iiot-core-server";
 // LUCAT
-import {isInitializedIIoTNode, resetIiotNode, setNodeStatusTo, shouldProcessMessageWithConnectorDynamicEnable} from "./core/opcua-iiot-core";
+import {isInitializedIIoTNode, resetIiotNode, setNodeStatusTo, shouldProcessMessageWithConnectorDynamicEnable, evaluateConnectorDynamicEnable, setNodeStatusToConnectorDisabled} from "./core/opcua-iiot-core";
 
 
 type OPCUAIIoTServer = nodered.Node & {
@@ -40,6 +40,28 @@ module.exports = (RED: nodered.NodeAPI) => {
 
     this.asoDemo = config.asoDemo // ASO (address space objects) Demo
     let self: TodoTypeAny = this;
+
+    // LUCAT - CONTROLLO EARLY CONNECTOR
+    if (self.connector && self.connector.dynamicEnable !== undefined) {
+      const isConnectorEnabled = evaluateConnectorDynamicEnable(self.connector)
+      if (!isConnectorEnabled) {
+        // Imposta status disabilitato e non registrarsi al connector
+        setNodeStatusToConnectorDisabled(self)
+        
+        // Setup handler per passthrough dei messaggi
+        self.on('input', (msg: NodeMessageInFlow) => {
+          self.send(msg) // Passa attraverso unchanged
+        })
+        
+        // Setup handler per close senza timeout
+        self.on('close', (done: () => void) => {
+          done() // Chiusura immediata, nessuna connessione da chiudere
+        })
+        
+        return // Non procedere con registrazione al connector
+      }
+    }
+
     coreServer.readConfigOfServerNode(this, config)
     coreServer.initServerNode(self)
     coreServer.loadNodeSets(self, __dirname)

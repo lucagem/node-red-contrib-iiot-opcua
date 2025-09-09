@@ -9,9 +9,9 @@
  */
 'use strict'
 
-import {Node, NodeAPI, NodeDef, NodeMessage, NodeMessageInFlow, NodeStatus} from "node-red";
-import {TodoTypeAny} from "./types/placeholders";
-import {ClientSession} from "node-opcua";
+import { Node, NodeAPI, NodeDef, NodeMessage, NodeMessageInFlow, NodeStatus } from "node-red";
+import { TodoTypeAny } from "./types/placeholders";
+import { ClientSession } from "node-opcua";
 import coreClient from "./core/opcua-iiot-core-client";
 import {
   buildNodesToRead,
@@ -21,10 +21,10 @@ import {
   isInitializedIIoTNode,
   isSessionBad, registerToConnector,
   resetIiotNode,
-  shouldProcessMessageWithConnectorDynamicEnable  // ← LUCAT
+  shouldProcessMessageWithConnectorDynamicEnable, evaluateConnectorDynamicEnable, setNodeStatusToConnectorDisabled  // ← LUCAT
 } from "./core/opcua-iiot-core";
-import {ReadValueIdOptions} from "node-opcua-service-read";
-import {NodeIdLike} from "node-opcua-nodeid";
+import { ReadValueIdOptions } from "node-opcua-service-read";
+import { NodeIdLike } from "node-opcua-nodeid";
 
 interface OPCUAIIoTRead extends Node {
   attributeId: number
@@ -66,6 +66,7 @@ module.exports = (RED: NodeAPI) => {
 
   function OPCUAIIoTRead(this: OPCUAIIoTRead, config: OPCUAIIoTReadDef) {
     RED.nodes.createNode(this, config)
+
     this.attributeId = parseInt(config.attributeId) || 0
     this.maxAge = parseInt(config.maxAge) || 1
     this.depth = parseInt(config.depth) || 1
@@ -79,6 +80,27 @@ module.exports = (RED: NodeAPI) => {
 
     let self: TodoTypeAny = this;
     self.iiot = initCoreNode()
+
+    // LUCAT - CONTROLLO EARLY CONNECTOR
+    if (self.connector && self.connector.dynamicEnable !== undefined) {
+      const isConnectorEnabled = evaluateConnectorDynamicEnable(self.connector)
+      if (!isConnectorEnabled) {
+        // Imposta status disabilitato e non registrarsi al connector
+        setNodeStatusToConnectorDisabled(self)
+        
+        // Setup handler per passthrough dei messaggi
+        self.on('input', (msg: NodeMessageInFlow) => {
+          self.send(msg) // Passa attraverso unchanged
+        })
+        
+        // Setup handler per close senza timeout
+        self.on('close', (done: () => void) => {
+          done() // Chiusura immediata, nessuna connessione da chiudere
+        })
+        
+        return // Non procedere con registrazione al connector
+      }
+    }
 
     const handleReadError = (err: Error, msg: NodeMessage) => {
       coreClient.readDebugLog(err)
@@ -106,9 +128,9 @@ module.exports = (RED: NodeAPI) => {
             self.iiot.handleReadError(err, readResult.msg)
           }
         }).catch(function (err: Error) {
-        /* istanbul ignore next */
-        (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
-      })
+          /* istanbul ignore next */
+          (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
+        })
     }
 
     const readValueFromNodeId = (session: ClientSession | TodoTypeAny, itemsToRead: TodoTypeAny[], msg: TodoTypeAny) => {
@@ -117,9 +139,9 @@ module.exports = (RED: NodeAPI) => {
           let message = buildResultMessage('VariableValue', readResult)
           this.send(message)
         }).catch(function (err: Error) {
-        /* istanbul ignore next */
-        (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
-      })
+          /* istanbul ignore next */
+          (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
+        })
     }
 
     const readHistoryDataFromNodeId = (session: ClientSession | TodoTypeAny, itemsToRead: TodoTypeAny[], msg: TodoTypeAny) => {
@@ -140,9 +162,9 @@ module.exports = (RED: NodeAPI) => {
           message.payload.historyEnd = readResult.endDate || self.iiot.historyEnd
           this.send(message)
         }).catch((err: Error) => {
-        /* istanbul ignore next */
-        (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
-      })
+          /* istanbul ignore next */
+          (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
+        })
     }
 
     const readFromNodeId = (session: ClientSession | TodoTypeAny, itemsToRead: TodoTypeAny[], msg: TodoTypeAny) => {
@@ -163,9 +185,9 @@ module.exports = (RED: NodeAPI) => {
           message.payload.maxAge = self.maxAge
           this.send(message)
         }).catch(function (err: Error) {
-        /* istanbul ignore next */
-        (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
-      })
+          /* istanbul ignore next */
+          (isInitializedIIoTNode(self)) ? handleReadError(err, msg) : coreClient.internalDebugLog(err.message)
+        })
     }
 
     const readFromSession = (session: ClientSession | TodoTypeAny, itemsToRead: TodoTypeAny, originMsg: TodoTypeAny) => {
@@ -274,7 +296,7 @@ module.exports = (RED: NodeAPI) => {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
       if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
         return // Il messaggio è già stato inoltrato dalla funzione
-      }      
+      }
       if (!checkConnectorState(self, msg, 'Read', errorHandler, emitHandler, statusHandler)) {
         return
       }

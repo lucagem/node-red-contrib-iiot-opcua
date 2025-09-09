@@ -11,7 +11,7 @@
 
 import * as path from 'path'
 import * as nodered from 'node-red'
-import {NodeStatus} from 'node-red'
+import { NodeStatus } from 'node-red'
 import {
   ConnectorIIoT,
   FsmConnectorStates,
@@ -36,16 +36,16 @@ import {
   StatusCodes,
   VariableTypeIds
 } from "node-opcua";
-import coreConnector, {logger} from "./core/opcua-iiot-core-connector";
-import {FindServerResults} from "node-opcua-client/source/tools/findservers";
-import _, {isUndefined} from "underscore";
-import {UserTokenType} from "node-opcua-service-endpoints";
-import {OPCUAClientOptions} from "node-opcua-client/dist/opcua_client";
+import coreConnector, { logger } from "./core/opcua-iiot-core-connector";
+import { FindServerResults } from "node-opcua-client/source/tools/findservers";
+import _, { isUndefined } from "underscore";
+import { UserTokenType } from "node-opcua-service-endpoints";
+import { OPCUAClientOptions } from "node-opcua-client/dist/opcua_client";
 import internalDebugLog = logger.internalDebugLog;
 import detailDebugLog = logger.detailDebugLog;
-import {getEnumKeys} from "./types/helpers";
-import {createMachine, interpret} from "@xstate/fsm"
-import {TodoTypeAny} from "./types/placeholders";
+import { getEnumKeys } from "./types/helpers";
+import { createMachine, interpret } from "@xstate/fsm"
+import { TodoTypeAny } from "./types/placeholders";
 //LUCAT
 import { isOpcUaIIoTEnabled, setNodeStatusToDisabled } from './core/opcua-iiot-core'
 
@@ -89,7 +89,7 @@ export type OPCUAIIoTConnectorNode = nodered.Node<OPCUAIIoTConnectorCredentials>
   on(event: 'connector_init', listener: (node: Node) => void): void
 
   on(event: 'server_connection_close' | 'server_connection_abort' | 'connection_closed' | 'server_connection_lost' | 'reset_opcua_connection' | 'session_closed' | 'session_restart' | 'session_error' | 'after_reconnection',
-     listener: () => void): void
+    listener: () => void): void
 }
 
 interface OPCUAIIoTConnectorConfigurationDef extends nodered.NodeDef {
@@ -164,35 +164,41 @@ module.exports = function (RED: nodered.NodeAPI) {
     // LUCAT
     const evaluateDynamicEnable = (): boolean => {
       const value = this.dynamicEnable.trim()
-      
+
       // Se vuoto, usa la logica esistente (variabile ambiente globale)
       if (!value) {
         return isOpcUaIIoTEnabled()
       }
-      
+
       // Se è una variabile di ambiente (${...})
       if (value.startsWith('${') && value.endsWith('}')) {
         const envVar = value.slice(2, -1) // Rimuove ${ e }
         const envValue = process.env[envVar]
-        
+
         if (!envValue) return true // Default enabled se variabile non esiste
-        
+
         const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
         return !disabledValues.includes(envValue.trim())
       }
-      
+
       // Valori diretti
       const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
       const enabledValues = ['1', 'true', 'TRUE', 'True', 't', 'T', 'yes', 'YES', 'Yes', 'on', 'ON', 'On']
-      
+
       if (disabledValues.includes(value)) return false
       if (enabledValues.includes(value)) return true
-      
+
       return true // Default enabled per valori non riconosciuti
-    }    
+    }
     // LUCAT - return if not enabled!
     if (!evaluateDynamicEnable()) {
       setNodeStatusToDisabled(this as any)
+      internalDebugLog('Connector disabled by dynamic-enable setting: ' + this.dynamicEnable)
+      // handler per chiusura rapida
+      this.on('close', (done: () => void) => {
+        internalDebugLog('Closing disabled connector - no connections to close')
+        done() // Chiusura immediata
+      })
       return // <-- Se arriva qui, tutto il resto viene saltato
     }
 
@@ -243,7 +249,7 @@ module.exports = function (RED: nodered.NodeAPI) {
         internalDebugLog('Connecting With Login Data On ' + this.endpoint)
       } else {
         /* istanbul ignore next */
-        this.error(new Error('Login Enabled But No Credentials'), {payload: ''})
+        this.error(new Error('Login Enabled But No Credentials'), { payload: '' })
       }
     }
 
@@ -289,10 +295,10 @@ module.exports = function (RED: nodered.NodeAPI) {
       this.iiot.opcuaClientOptions = getUpdatedServerOptions()
 
       if (!this.iiot.opcuaClient)
-        this.iiot.opcuaClient = OPCUAClient.create({...this.iiot.opcuaClientOptions}) // Need to use the spread operator, because otherwise there is phantom circular references
+        this.iiot.opcuaClient = OPCUAClient.create({ ...this.iiot.opcuaClientOptions }) // Need to use the spread operator, because otherwise there is phantom circular references
       if (Object.keys(this.iiot.opcuaClient).length === 0) {
         /* istanbul ignore next */
-        detailDebugLog('Failed to create OPCUA Client ', {opcuaClient: this.iiot.opcuaClient})
+        detailDebugLog('Failed to create OPCUA Client ', { opcuaClient: this.iiot.opcuaClient })
       }
 
       if (this.autoSelectRightEndpoint) {
@@ -306,7 +312,7 @@ module.exports = function (RED: nodered.NodeAPI) {
       if (isUndefined(this.iiot))
         return
 
-      if(isUndefined(this.iiot.stateService))
+      if (isUndefined(this.iiot.stateService))
         return
 
       // Needs to be separate if so that typescript understands the types properly
@@ -368,7 +374,7 @@ module.exports = function (RED: nodered.NodeAPI) {
           /* istanbul ignore next */
           internalDebugLog('Auto Switch To Endpoint Error ' + err)
           if (this.showErrors) {
-            this.error(err, {payload: 'Get Endpoints Request Error'})
+            this.error(err, { payload: 'Get Endpoints Request Error' })
           }
         } else {
           const endpoint = (endpoints || []).find((endpoint) => {
@@ -390,7 +396,7 @@ module.exports = function (RED: nodered.NodeAPI) {
             internalDebugLog('Endpoints Auto Request Error ' + err)
             if (this.showErrors) {
               /* istanbul ignore next */
-              this.error(err, {payload: 'Discover Client Disconnect Error'})
+              this.error(err, { payload: 'Discover Client Disconnect Error' })
             }
           } else {
             internalDebugLog('Endpoints Auto Request Done With Endpoint ' + this.endpoint)
@@ -439,7 +445,7 @@ module.exports = function (RED: nodered.NodeAPI) {
         internalDebugLog('State Is Not Active While Start Session-> ' + this.iiot.stateService.state.value)
         if (this.showErrors) {
           /* istanbul ignore next */
-          this.error(new Error('OPC UA Connector Is Not Active'), {payload: 'Create Session Error'})
+          this.error(new Error('OPC UA Connector Is Not Active'), { payload: 'Create Session Error' })
         }
         return
       }
@@ -448,7 +454,7 @@ module.exports = function (RED: nodered.NodeAPI) {
         internalDebugLog('Session Request Not Allowed On State ' + this.iiot.stateService.state.value)
         if (this.showErrors) {
           /* istanbul ignore next */
-          this.error(new Error('OPC UA Connector Is Not Open'), {payload: 'Create Session Error'})
+          this.error(new Error('OPC UA Connector Is Not Open'), { payload: 'Create Session Error' })
         }
         return
       }
@@ -457,7 +463,7 @@ module.exports = function (RED: nodered.NodeAPI) {
         internalDebugLog('OPC UA Client Connection Is Not Valid On State ' + this.iiot.stateService.state.value)
         if (this.showErrors) {
           /* istanbul ignore next */
-          this.error(new Error('OPC UA Client Connection Is Not Valid'), {payload: 'Create Session Error'})
+          this.error(new Error('OPC UA Client Connection Is Not Valid'), { payload: 'Create Session Error' })
         }
         return
       }
@@ -480,7 +486,7 @@ module.exports = function (RED: nodered.NodeAPI) {
             handleSessionClose(statusCode)
           })
         }).catch((err: Error) => {
-            /* istanbul ignore next */
+          /* istanbul ignore next */
           if (isInitializedIIoTNode<ConnectorIIoT>(this.iiot)) {
             //this.iiot.stateMachine.lock().stopopcua()
             this.iiot.stateService.send('LOCK')
@@ -517,9 +523,9 @@ module.exports = function (RED: nodered.NodeAPI) {
       //let state = this.iiot?.stateMachine?.getMachineState()
       let state = this.iiot?.stateService?.state.value
       return (state === FsmConnectorStates.StateStopped ||
-              state === FsmConnectorStates.StateEnd ||
-              state === FsmConnectorStates.StateRenewed ||
-              state === FsmConnectorStates.StateReconfigured)
+        state === FsmConnectorStates.StateEnd ||
+        state === FsmConnectorStates.StateRenewed ||
+        state === FsmConnectorStates.StateReconfigured)
     }
 
     const resetOPCUAConnection = (callerInfo: string) => {
@@ -543,7 +549,7 @@ module.exports = function (RED: nodered.NodeAPI) {
       internalDebugLog('Handle Error On ' + this.endpoint + ' err: ' + err)
       if (this.showErrors) {
         /* istanbul ignore next */
-        this.error(err, {payload: 'Handle Connector Error'})
+        this.error(err, { payload: 'Handle Connector Error' })
       }
     }
 
@@ -670,11 +676,10 @@ module.exports = function (RED: nodered.NodeAPI) {
 
     const opcuaDisconnect = (done: () => void) => {
 
-      if ( isUndefined(this.iiot) ||
-           isUndefined(this.iiot.registeredNodeList) ||
-          _.isEmpty(this.iiot) ||
-          _.isArray(this.iiot.registeredNodeList) === false)
-      {
+      if (isUndefined(this.iiot) ||
+        isUndefined(this.iiot.registeredNodeList) ||
+        _.isEmpty(this.iiot) ||
+        _.isArray(this.iiot.registeredNodeList) === false) {
         opcuaDirectDisconnect(done)
         return
       }
@@ -805,9 +810,9 @@ module.exports = function (RED: nodered.NodeAPI) {
 
     /* #########   FSM   #########     */
 
-    const connectorStateEventFunction = async (state: any) =>{
-      if(!state.changed) return;
-      if(this.iiot === undefined) return;
+    const connectorStateEventFunction = async (state: any) => {
+      if (!state.changed) return;
+      if (this.iiot === undefined) return;
 
       switch (state.value) {
         case FsmConnectorStates.StateIdle:
@@ -1076,8 +1081,8 @@ module.exports = function (RED: nodered.NodeAPI) {
   try {
     RED.nodes.registerType('OPCUA-IIoT-Connector', OPCUAIIoTConnectorConfiguration, {
       credentials: {
-        user: {type: 'text'},
-        password: {type: 'password'}
+        user: { type: 'text' },
+        password: { type: 'password' }
       }
     })
   } catch (e: any) {
@@ -1101,7 +1106,7 @@ module.exports = function (RED: nodered.NodeAPI) {
           } else {
             internalDebugLog('Perform Find Servers Request ' + err)
             if (node.showErrors) {
-              node.error(err, {payload: ''})
+              node.error(err, { payload: '' })
             }
             res.json([])
           }
@@ -1137,7 +1142,7 @@ module.exports = function (RED: nodered.NodeAPI) {
           discoveryClient.getEndpoints(function (err, endpoints) {
             if (err) {
               if (node.showErrors) {
-                node.error(err, {payload: ''})
+                node.error(err, { payload: '' })
               }
               internalDebugLog('Get Endpoints Request Error ' + err)
               res.json([])
@@ -1219,7 +1224,7 @@ module.exports = function (RED: nodered.NodeAPI) {
 
   const enumToTypeList = <O extends object>(inputEnum: O): typeListItem<keyof O>[] => {
     return getEnumKeys(inputEnum).map((key) => {
-      return {nodeId: `i=${inputEnum[key]}`, label: key}
+      return { nodeId: `i=${inputEnum[key]}`, label: key }
     })
   }
 
@@ -1241,12 +1246,12 @@ module.exports = function (RED: nodered.NodeAPI) {
 
   RED.httpAdmin.get('/opcuaIIoT/list/FilterTypes', RED.auth.needsPermission('opcuaIIoT.list.filterids'), function (req, res) {
     const resultTypeList = [
-      {name: 'dataType', label: 'Data Type'},
-      {name: 'dataValue', label: 'Data Value'},
-      {name: 'nodeClass', label: 'Node Class'},
-      {name: 'typeDefinition', label: 'Type Definition'},
-      {name: 'browseName', label: 'Browse Name'},
-      {name: 'nodeId', label: 'Node Id'},
+      { name: 'dataType', label: 'Data Type' },
+      { name: 'dataValue', label: 'Data Value' },
+      { name: 'nodeClass', label: 'Node Class' },
+      { name: 'typeDefinition', label: 'Type Definition' },
+      { name: 'browseName', label: 'Browse Name' },
+      { name: 'nodeId', label: 'Node Id' },
     ]
     res.json(resultTypeList)
   })

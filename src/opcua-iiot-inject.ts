@@ -13,7 +13,7 @@ import {NodeMessageInFlow} from "node-red";
 import {TodoTypeAny} from "./types/placeholders";
 import coreInject from "./core/opcua-iiot-core-inject";
 //LUCAT
-import {resetIiotNode, IotOpcUaNodeMessage, shouldProcessMessageWithConnectorDynamicEnable} from "./core/opcua-iiot-core";
+import {resetIiotNode, IotOpcUaNodeMessage, shouldProcessMessageWithConnectorDynamicEnable, evaluateConnectorDynamicEnable, setNodeStatusToConnectorDisabled} from "./core/opcua-iiot-core";
 import {CronJob} from 'cron';
 import {AddressSpaceItem} from "./types/helpers";
 
@@ -76,6 +76,27 @@ module.exports = function (RED: nodered.NodeAPI) {
     this.addressSpaceItems = config.addressSpaceItems || []
 
     let self: TodoTypeAny = this
+
+    // LUCAT - CONTROLLO EARLY CONNECTOR
+    if (self.connector && self.connector.dynamicEnable !== undefined) {
+      const isConnectorEnabled = evaluateConnectorDynamicEnable(self.connector)
+      if (!isConnectorEnabled) {
+        // Imposta status disabilitato e non registrarsi al connector
+        setNodeStatusToConnectorDisabled(self)
+        
+        // Setup handler per passthrough dei messaggi
+        self.on('input', (msg: NodeMessageInFlow) => {
+          self.send(msg) // Passa attraverso unchanged
+        })
+        
+        // Setup handler per close senza timeout
+        self.on('close', (done: () => void) => {
+          done() // Chiusura immediata, nessuna connessione da chiudere
+        })
+        
+        return // Non procedere con registrazione al connector
+      }
+    }
 
     let intervalId: NodeJS.Timer | null = null
     let onceTimeout: NodeJS.Timeout | null = null

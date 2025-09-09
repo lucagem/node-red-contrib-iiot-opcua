@@ -92,7 +92,7 @@ export function setNodeStatusToDisabled(node: any): void {
 }
 
 /**
- * Check if node should process messages or pass through
+ * LUCAT- Check if node should process messages or pass through
  * @param node Node to check
  * @param msg Incoming message
  * @param nodeType Node type name for logging
@@ -116,7 +116,7 @@ export function shouldProcessMessage(node: any, msg: any, nodeType: string): boo
 }
 
 /**
- * Controlla se il connector del nodo ha dynamic-enable disabilitato
+ * LUCAT - Controlla se il connector del nodo ha dynamic-enable disabilitato
  * @param node Nodo che sta processando il messaggio
  * @param msg Messaggio in arrivo  
  * @param nodeType Nome del tipo di nodo per logging
@@ -154,11 +154,11 @@ export function shouldProcessMessageWithConnectorDynamicEnable(
 }
 
 /**
- * Valuta se il connector è abilitato basandosi sul suo dynamic-enable
+ * LUCAT - Valuta se il connector è abilitato basandosi sul suo dynamic-enable
  * @param connector Il nodo connector
  * @returns true se abilitato, false se disabilitato
  */
-function evaluateConnectorDynamicEnable(connector: any): boolean {
+export function evaluateConnectorDynamicEnable(connector: any): boolean {
   const value = (connector.dynamicEnable || "").trim()
 
   // Se vuoto, usa la logica globale esistente
@@ -188,14 +188,14 @@ function evaluateConnectorDynamicEnable(connector: any): boolean {
 }
 
 /**
- * Imposta status visivo per indicare che il connector è disabilitato
+ * LUCAT - Imposta status visivo per indicare che il connector è disabilitato
  * @param node Nodo da aggiornare
  */
 export function setNodeStatusToConnectorDisabled(node: any): void {
   node.status({
     fill: 'grey',
     shape: 'dot',
-    text: 'connector disabled by dynamic-enable'
+    text: 'disabled'
   })
 }
 

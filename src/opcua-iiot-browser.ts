@@ -22,7 +22,7 @@ import {
   registerToConnector,
   resetIiotNode,
   setNodeStatusTo,
-  shouldProcessMessageWithConnectorDynamicEnable  // LUCAT
+  shouldProcessMessageWithConnectorDynamicEnable, evaluateConnectorDynamicEnable, setNodeStatusToConnectorDisabled  // LUCAT
 } from "./core/opcua-iiot-core";
 import {BrowseResult, ClientSession, NodeId} from "node-opcua";
 import {AddressSpaceItem} from "./types/helpers";
@@ -126,6 +126,27 @@ module.exports = function (RED: nodered.NodeAPI) {
     const {iiot, browseTopic} = coreBrowser.initBrowserNode();
     self.browseTopic = browseTopic;
     self.iiot = iiot;
+
+    // LUCAT - CONTROLLO EARLY CONNECTOR
+    if (self.connector && self.connector.dynamicEnable !== undefined) {
+      const isConnectorEnabled = evaluateConnectorDynamicEnable(self.connector)
+      if (!isConnectorEnabled) {
+        // Imposta status disabilitato e non registrarsi al connector
+        setNodeStatusToConnectorDisabled(self)
+        
+        // Setup handler per passthrough dei messaggi
+        self.on('input', (msg: NodeMessageInFlow) => {
+          self.send(msg) // Passa attraverso unchanged
+        })
+        
+        // Setup handler per close senza timeout
+        self.on('close', (done: () => void) => {
+          done() // Chiusura immediata, nessuna connessione da chiudere
+        })
+        
+        return // Non procedere con registrazione al connector
+      }
+    }
 
     self.iiot.delayMessageTimer = []
 
