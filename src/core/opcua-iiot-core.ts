@@ -384,7 +384,6 @@ function extractValue(value: any) {
   return value
 }
 
-// Modifica la funzione buildNewVariant (cerca la funzione esistente e sostituisci con questa versione)
 export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueOptions {
   let variantValue: VariantOptions = {
     dataType: DataType.Null,
@@ -402,6 +401,8 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       _dataType = "UInt16";
     } else if (String(datatype).includes("UInt32")) {
       _dataType = "UInt32";
+    } else if (String(datatype).includes("UInt64")) {
+      _dataType = "UInt64";
     } else if (String(datatype).includes("Float")) {
       _dataType = "Float";
     } else if (String(datatype).includes("Double")) {
@@ -410,6 +411,14 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       _dataType = "Int16";
     } else if (String(datatype).includes("Int32")) {
       _dataType = "Int32";
+    } else if (String(datatype).includes("Int64")) {
+      _dataType = "Int64";
+    } else if (String(datatype).includes("Boolean")) {
+      _dataType = "Boolean";
+    } else if (String(datatype).includes("String")) {
+      _dataType = "String";
+    } else if (String(datatype).includes("Byte")) {
+      _dataType = "Byte";
     }
   }
 
@@ -420,7 +429,7 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
   switch (_dataType /* 2025-09-09 LucaT - Array consuming */) {
     case 'Float':
     case DataType.Float:
-      // 2025-09-09 LucaT - Array consuming
+      // Array consuming
       if (_isArray) {
         variantValue = {
           dataType: DataType.Float,
@@ -436,7 +445,7 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       break
     case 'Double':
     case DataType.Double:
-      // 2025-09-09 LucaT - Array consuming
+      // Array consuming
       if (_isArray) {
         variantValue = {
           dataType: DataType.Double,
@@ -452,7 +461,7 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       break
     case 'UInt16':
     case DataType.UInt16:
-      // 2025-09-09 LucaT - Array consuming
+      // Array consuming
       if (_isArray) {
         let uint16Array = new Uint16Array(value.map((x: any) => parseInt(x)));
         variantValue = {
@@ -470,7 +479,7 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       break
     case 'UInt32':
     case DataType.UInt32:
-      // 2025-09-09 LucaT - Array consuming
+      // Array consuming
       if (_isArray) {
         let uint32Array = new Uint32Array(value.map((x: any) => parseInt(x)));
         variantValue = {
@@ -486,9 +495,25 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
         }
       }
       break
+    case 'UInt64':
+    case DataType.UInt64:
+      // Array consuming
+      if (_isArray) {
+        variantValue = {
+          dataType: DataType.UInt64,
+          value: value.map((x: any) => parseInt(x)),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        variantValue = {
+          dataType: DataType.UInt64,
+          value: parseInt(value)
+        };
+      }
+      break
     case 'Int32':
     case DataType.Int32:
-      // 2025-09-09 LucaT - Array consuming  
+      // Array consuming  
       if (_isArray) {
         let int32Array = new Int32Array(value.map((x: any) => parseInt(x)));
         variantValue = {
@@ -505,7 +530,7 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       break
     case 'Int16':
     case DataType.Int16:
-      // 2025-09-09 LucaT - Array consuming
+      // Array consuming
       if (_isArray) {
         let int16Array = new Int16Array(value.map((x: any) => parseInt(x)));
         variantValue = {
@@ -522,23 +547,86 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       break
     case 'Int64':
     case DataType.Int64:
-      variantValue = {
-        dataType: DataType.Int64,
-        value: parseInt(value)
-      };
+      // Array consuming
+      if (_isArray) {
+        variantValue = {
+          dataType: DataType.Int64,
+          value: value.map((x: any) => parseInt(x)),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        variantValue = {
+          dataType: DataType.Int64,
+          value: parseInt(value)
+        };
+      }
       break
     case 'Boolean':
     case DataType.Boolean:
-      if (value && value !== 'false') {
+      // Array consuming
+      if (_isArray) {
         variantValue = {
           dataType: DataType.Boolean,
-          value: true
-        };
+          value: value.map((x: any) => (x && x !== 'false')),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        if (value && value !== 'false') {
+          variantValue = {
+            dataType: DataType.Boolean,
+            value: true
+          };
+        } else {
+          variantValue = {
+            dataType: DataType.Boolean,
+            value: false
+          };
+        }
+      }
+      break
+    case 'String':
+    case DataType.String:
+      // Array consuming
+      if (_isArray) {
+        variantValue = {
+          dataType: DataType.String,
+          value: value.map((x: any) => (typeof x !== 'string') ? x.toString() : x),
+          arrayType: VariantArrayType.Array
+        }
       } else {
         variantValue = {
-          dataType: DataType.Boolean,
-          value: false
+          dataType: DataType.String,
+          value: (typeof value !== 'string') ? value.toString() : value
         };
+      }
+      break
+    case 'Byte':
+    case DataType.Byte:
+      // Array consuming
+      if (_isArray) {
+        variantValue = {
+          dataType: DataType.Byte,
+          value: value.map((x: any) => {
+            if (typeof x === 'boolean') {
+              return x ? 1 : 0;
+            } else {
+              return parseInt(x) & 0xFF; // Assicura che sia in range 0-255
+            }
+          }),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        if (typeof value === 'boolean') {
+          variantValue = {
+            dataType: DataType.Byte,
+            value: value ? 1 : 0
+          };
+        } else {
+          variantValue = {
+            dataType: DataType.Byte,
+            value: parseInt(value) & 0xFF
+          };
+        }
       }
       break
     case 'LocalizedText':
