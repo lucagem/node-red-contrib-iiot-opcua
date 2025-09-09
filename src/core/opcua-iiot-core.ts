@@ -41,6 +41,7 @@ import {
   NodeId,
   NodeIdType,
   OPCUAClient, OPCUADiscoveryServer, UserIdentityInfo,
+  VariantArrayType /* 2025-09-09 LucaT */
 } from "node-opcua";
 import { WriteValueOptions } from "node-opcua-service-write";
 import { VariantOptions } from "node-opcua-variant";
@@ -383,6 +384,7 @@ function extractValue(value: any) {
   return value
 }
 
+// Modifica la funzione buildNewVariant (cerca la funzione esistente e sostituisci con questa versione)
 export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueOptions {
   let variantValue: VariantOptions = {
     dataType: DataType.Null,
@@ -390,52 +392,132 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
   }
 
   let originValue = Object.assign({}, value)
+
+  // 2025-09-09 LucaT - Array consuming
+  const _isArray = String(datatype).includes("Array");
+  let _dataType = datatype;
+
+  if (_isArray) {
+    if (String(datatype).includes("UInt16")) {
+      _dataType = "UInt16";
+    } else if (String(datatype).includes("UInt32")) {
+      _dataType = "UInt32";
+    } else if (String(datatype).includes("Float")) {
+      _dataType = "Float";
+    } else if (String(datatype).includes("Double")) {
+      _dataType = "Double";
+    } else if (String(datatype).includes("Int16")) {
+      _dataType = "Int16";
+    } else if (String(datatype).includes("Int32")) {
+      _dataType = "Int32";
+    }
+  }
+
   value = extractValue(value);
 
   logger.detailDebugLog('buildNewVariant datatype: ' + datatype + ' originValue:' + originValue + ' value:' + value)
-  switch (datatype) {
+
+  switch (_dataType /* 2025-09-09 LucaT - Array consuming */) {
     case 'Float':
     case DataType.Float:
-      variantValue = {
-        dataType: DataType.Float,
-        value: parseFloat(value)
+      // 2025-09-09 LucaT - Array consuming
+      if (_isArray) {
+        variantValue = {
+          dataType: DataType.Float,
+          value: value.map((v: any) => parseFloat(v)),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        variantValue = {
+          dataType: DataType.Float,
+          value: parseFloat(value)
+        }
       }
       break
     case 'Double':
     case DataType.Double:
-      variantValue = {
-        dataType: DataType.Double,
-        value: parseFloat(value)
+      // 2025-09-09 LucaT - Array consuming
+      if (_isArray) {
+        variantValue = {
+          dataType: DataType.Double,
+          value: value.map((v: any) => parseFloat(v)),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        variantValue = {
+          dataType: DataType.Double,
+          value: parseFloat(value)
+        }
       }
       break
     case 'UInt16':
     case DataType.UInt16:
-      let uint16 = new Uint16Array([value])
-      variantValue = {
-        dataType: DataType.UInt16,
-        value: uint16[0]
+      // 2025-09-09 LucaT - Array consuming
+      if (_isArray) {
+        let uint16Array = new Uint16Array(value.map((x: any) => parseInt(x)));
+        variantValue = {
+          dataType: DataType.UInt16,
+          value: Array.from(uint16Array),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        let uint16 = new Uint16Array([value])
+        variantValue = {
+          dataType: DataType.UInt16,
+          value: uint16[0]
+        }
       }
       break
     case 'UInt32':
     case DataType.UInt32:
-      let uint32 = new Uint32Array([value])
-      variantValue = {
-        dataType: DataType.UInt32,
-        value: uint32[0]
+      // 2025-09-09 LucaT - Array consuming
+      if (_isArray) {
+        let uint32Array = new Uint32Array(value.map((x: any) => parseInt(x)));
+        variantValue = {
+          dataType: DataType.UInt32,
+          value: Array.from(uint32Array),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        let uint32 = new Uint32Array([value])
+        variantValue = {
+          dataType: DataType.UInt32,
+          value: uint32[0]
+        }
       }
       break
     case 'Int32':
     case DataType.Int32:
-      variantValue = {
-        dataType: DataType.Int32,
-        value: parseInt(value)
+      // 2025-09-09 LucaT - Array consuming  
+      if (_isArray) {
+        let int32Array = new Int32Array(value.map((x: any) => parseInt(x)));
+        variantValue = {
+          dataType: DataType.Int32,
+          value: Array.from(int32Array),
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        variantValue = {
+          dataType: DataType.Int32,
+          value: parseInt(value)
+        };
       }
       break
     case 'Int16':
     case DataType.Int16:
-      variantValue = {
-        dataType: DataType.Int16,
-        value: parseInt(value)
+      // 2025-09-09 LucaT - Array consuming
+      if (_isArray) {
+        let int16Array = new Int16Array(value.map((x: any) => parseInt(x)));
+        variantValue = {
+          dataType: DataType.Int16,
+          value: Array.from(int16Array), // converti Int16Array in array normale
+          arrayType: VariantArrayType.Array
+        }
+      } else {
+        variantValue = {
+          dataType: DataType.Int16,
+          value: parseInt(value)
+        };
       }
       break
     case 'Int64':
@@ -443,7 +525,7 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       variantValue = {
         dataType: DataType.Int64,
         value: parseInt(value)
-      }
+      };
       break
     case 'Boolean':
     case DataType.Boolean:
@@ -451,12 +533,12 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
         variantValue = {
           dataType: DataType.Boolean,
           value: true
-        }
+        };
       } else {
         variantValue = {
           dataType: DataType.Boolean,
           value: false
-        }
+        };
       }
       break
     case 'LocalizedText':
@@ -464,14 +546,14 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       variantValue = {
         dataType: DataType.LocalizedText,
         value: JSON.parse(value) /* [{text:'Hello', locale:'en'}, {text:'Hallo', locale:'de'} ... ] */
-      }
+      };
       break
     case 'DateTime':
     case DataType.DateTime:
       variantValue = {
         dataType: DataType.DateTime,
         value: new Date(value)
-      }
+      };
       break
     default:
       if (datatype !== '') {
@@ -481,14 +563,14 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
             variantValue = {
               dataType: item.dataType,
               value: value
-            }
+            };
           }
-        })
+        });
       } else {
         variantValue = {
           dataType: DataType.String,
           value: value
-        }
+        };
       }
       break
   }
