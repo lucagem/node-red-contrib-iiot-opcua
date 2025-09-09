@@ -29,4 +29,4 @@ echo Press Ctrl+C to stop Node-RED
 echo.
 
 cd node-red-test
-npx node-red --userDir "C:\Users\luca.tralli\_gemCode\node-red-contrib-iiot-opcua\node-red-test\.node-red"
+npx node-red --userDir ".\.node-red"

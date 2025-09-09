@@ -1,4 +1,4 @@
-# [0.1.0-beta.1](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/compare/v4.2.0...v0.1.0-beta.1) (2025-09-09)
+# [4.2.0-beta.1](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/compare/v4.2.0...v4.2.0-beta.1) (2025-09-09)
 
 
 ### Features

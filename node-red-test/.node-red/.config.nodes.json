@@ -429,7 +429,7 @@
     },
     "node-red-contrib-iiot-opcua-gem": {
         "name": "node-red-contrib-iiot-opcua-gem",
-        "version": "4.2.0",
+        "version": "4.2.0-beta.1",
         "local": false,
         "user": false,
         "nodes": {
