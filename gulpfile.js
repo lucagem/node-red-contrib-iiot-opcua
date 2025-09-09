@@ -123,7 +123,7 @@ function doc (cb) {
 }
 
 // Modifica la sequenza docs per assicurarsi che le directory esistano prima
-const docs = series(ensureDocsDir, doc, docIcons, docImages)
+const docs = series(ensureDocsDir, parallel(doc, docIcons, docImages))
 const build = series(wipe, web, ts, locale, publics, icons)
 
 exports.docs = docs
