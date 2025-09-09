@@ -1,3 +1,12 @@
+# [0.1.0-beta.1](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/compare/v4.2.0...v0.1.0-beta.1) (2025-09-09)
+
+
+### Features
+
+* add development automation scripts ([316afc3](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/commit/316afc32e5fecbfbd100d7b93158d634fb7bdc30))
+
+
+
 # [4.2.0](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/compare/v4.1.2...v4.2.0) (2023-04-10)
 
 
