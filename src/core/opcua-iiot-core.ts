@@ -424,7 +424,9 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
 
   value = extractValue(value);
 
-  logger.detailDebugLog('buildNewVariant datatype: ' + datatype + ' originValue:' + originValue + ' value:' + value)
+  console.log('buildNewVariant datatype: ' + datatype + ' originValue:' + originValue + ' value:' + value + ' _isArray=' + _isArray);
+
+  logger.internalDebugLog('buildNewVariant datatype: ' + datatype + ' originValue:' + originValue + ' value:' + value);
 
   switch (_dataType /* 2025-09-09 LucaT - Array consuming */) {
     case 'Float':
@@ -604,6 +606,10 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
     case DataType.Byte:
       // Array consuming
       if (_isArray) {
+        if (!Array.isArray(value)) {
+          logger.internalDebugLog(`buildNewVariant: valore non array per tipo ${_dataType}: ${JSON.stringify(value)}`);
+          // value = [value]; // Forza in array          
+        }
         variantValue = {
           dataType: DataType.Byte,
           value: value.map((x: any) => {
@@ -615,6 +621,7 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
           }),
           arrayType: VariantArrayType.Array
         }
+        logger.internalDebugLog(`buildNewVariant: variantValue= ${typeof(variantValue)}: ${JSON.stringify(variantValue)}`);
       } else {
         if (typeof value === 'boolean') {
           variantValue = {

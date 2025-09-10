@@ -29,4 +29,6 @@ echo Press Ctrl+C to stop Node-RED
 echo.
 
 cd node-red-test
+REM imposto che voglio vedere i debug per il nodo core
+set DEBUG=opcuaIIoT:core,opcuaIIoT:write
 npx node-red --userDir ".\.node-red"

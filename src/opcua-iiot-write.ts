@@ -32,7 +32,6 @@ import {Node, NodeAPI, NodeDef, NodeMessage, NodeMessageInFlow, NodeStatus} from
 import {BrowserPayload} from "./opcua-iiot-browser";
 import {ClientSession, ClientSessionWriteService, StatusCode, StatusCodes} from "node-opcua";
 
-
 interface OPCUAIIoTWrite extends Node {
   name: string
   justValue: string
