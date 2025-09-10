@@ -42,8 +42,6 @@ const READ_TYPE = Object.freeze({
 }) // eslint-disable-line no-use-before-define
 
 const write = (session: ClientSessionWriteService, nodesToWrite: WriteValueOptions[], originMsg: TodoTypeAny): Promise<WriteResult> => {
-  // LUCAT - TOGLIMIIII
-  console.log(`opcua-iiot-core-client.write ${JSON.stringify(nodesToWrite)}`);
   return new Promise(
     (resolve, reject) => {
       if (session) {

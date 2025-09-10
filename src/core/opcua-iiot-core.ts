@@ -417,14 +417,12 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       _dataType = "Boolean";
     } else if (String(datatype).includes("String")) {
       _dataType = "String";
-    } else if (String(datatype).includes("Byte")) {
-      _dataType = "Byte";
+    } else if (String(datatype).includes("SByte")) {
+      _dataType = "SByte";
     }
   }
 
   value = extractValue(value);
-
-  console.log('buildNewVariant datatype: ' + datatype + ' originValue:' + originValue + ' value:' + value + ' _isArray=' + _isArray);
 
   logger.internalDebugLog('buildNewVariant datatype: ' + datatype + ' originValue:' + originValue + ' value:' + value);
 
@@ -604,34 +602,51 @@ export function buildNewVariant(datatype: DataTypeInput, value: any): DataValueO
       break
     case 'Byte':
     case DataType.Byte:
+      if (typeof value === 'boolean') {
+        variantValue = {
+          dataType: DataType.Byte,
+          value: value ? 1 : 0
+        };
+      } else {
+        variantValue = {
+          dataType: DataType.Byte,
+          value: parseInt(value) & 0xFF
+        };
+      }
+      break
+    // LUCAT
+    case 'SByte':
+    case DataType.SByte:
       // Array consuming
       if (_isArray) {
         if (!Array.isArray(value)) {
           logger.internalDebugLog(`buildNewVariant: valore non array per tipo ${_dataType}: ${JSON.stringify(value)}`);
-          // value = [value]; // Forza in array          
         }
         variantValue = {
-          dataType: DataType.Byte,
+          dataType: DataType.SByte,
           value: value.map((x: any) => {
             if (typeof x === 'boolean') {
               return x ? 1 : 0;
             } else {
-              return parseInt(x) & 0xFF; // Assicura che sia in range 0-255
+              let val = parseInt(x);
+              // SByte range: -128 to 127
+              return Math.max(-128, Math.min(127, val));
             }
           }),
           arrayType: VariantArrayType.Array
         }
-        logger.internalDebugLog(`buildNewVariant: variantValue= ${typeof(variantValue)}: ${JSON.stringify(variantValue)}`);
+        logger.internalDebugLog(`buildNewVariant: variantValue= ${typeof (variantValue)}: ${JSON.stringify(variantValue)}`);
       } else {
         if (typeof value === 'boolean') {
           variantValue = {
-            dataType: DataType.Byte,
+            dataType: DataType.SByte,
             value: value ? 1 : 0
           };
         } else {
+          let val = parseInt(value);
           variantValue = {
-            dataType: DataType.Byte,
-            value: parseInt(value) & 0xFF
+            dataType: DataType.SByte,
+            value: Math.max(-128, Math.min(127, val)) // SByte range: -128 to 127
           };
         }
       }
@@ -711,6 +726,11 @@ export function getVariantValue(datatype: DataTypeInput, value: any): number | D
     case 'String':
     case DataType.String:
       return (typeof value !== 'string') ? value.toString() : value
+    // LUCAT
+    case 'SByte':
+    case DataType.SByte:
+      let val = parseInt(value);
+      return Math.max(-128, Math.min(127, val));
     default:
       return value
   }
@@ -866,6 +886,16 @@ export function convertDataValueByDataType(value: any, dataType: DataTypeInput):
           convertedValue = value
         }
         break;
+      // LUCAT
+      case 'SByte':
+      case DataType.SByte:
+        if (valueType === 'boolean') {
+          convertedValue = value ? 1 : 0
+        } else {
+          let val = parseInt(value);
+          convertedValue = Math.max(-128, Math.min(127, val)); // SByte range
+        }
+        break
       default:
         logger.internalDebugLog('convertDataValue unused DataType: ' + dataType)
         if (_.isUndefined(value)) {
