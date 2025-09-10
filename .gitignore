@@ -32,3 +32,8 @@ built/
 node-red-test/
 .vscode/settings.json
 *.pem
+# Ma non ignorare i file per l'applicativo node-red
+!node-red-test/.node-red/
+!node-red-test/.node-red/*.json
+!node-red-test/.node-red/*.js
+!node-red-test/.node-red/package.json

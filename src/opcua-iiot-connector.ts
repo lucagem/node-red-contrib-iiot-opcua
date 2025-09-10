@@ -46,8 +46,87 @@ import detailDebugLog = logger.detailDebugLog;
 import { getEnumKeys } from "./types/helpers";
 import { createMachine, interpret } from "@xstate/fsm"
 import { TodoTypeAny } from "./types/placeholders";
-//LUCAT
+//LUCAT START
 import { isOpcUaIIoTEnabled, setNodeStatusToDisabled } from './core/opcua-iiot-core'
+import * as fs from 'fs'
+/**
+ * LUCAT - Funzione per trovare automaticamente i certificati client
+ * Cerca i certificati nelle varie posizioni possibili e li copia se necessario
+ */
+const findAndSetupClientCertificates = (nodeOPCUAClientPath: string) => {
+  const possiblePaths = [
+    // Path di default dove node-opcua cerca
+    path.join(nodeOPCUAClientPath, '/certificates/client_certificate.pem'),
+    path.join(nodeOPCUAClientPath, '/certificates/client_selfsigned_cert_1024.pem'),
+
+    // Path dove vengono generati
+    path.join(nodeOPCUAClientPath, '/certificates/PKI/own/cert/client_certificate.pem'),
+    path.join(nodeOPCUAClientPath, '/certificates/PKI/own/cert/client_selfsigned_cert_1024.pem'),
+
+    // Path alternativi
+    path.join(process.cwd(), 'certificates/client_certificate.pem'),
+    path.join(process.cwd(), 'certificates/client_selfsigned_cert_1024.pem'),
+    path.join(process.cwd(), 'certificates/PKI/own/cert/client_certificate.pem'),
+  ]
+
+  const possiblePrivateKeyPaths = [
+    // Path di default dove node-opcua cerca
+    path.join(nodeOPCUAClientPath, '/certificates/private_key.pem'),
+    path.join(nodeOPCUAClientPath, '/certificates/PKI/own/private/private_key.pem'),
+
+    // Path alternativi
+    path.join(process.cwd(), 'certificates/private_key.pem'),
+    path.join(process.cwd(), 'certificates/PKI/own/private/private_key.pem'),
+  ]
+
+  let foundCertificate: string | null = null
+  let foundPrivateKey: string | null = null
+
+  // Cerca il certificato
+  for (const certPath of possiblePaths) {
+    if (fs.existsSync(certPath)) {
+      foundCertificate = certPath
+      detailDebugLog('Found client certificate at: ' + certPath)
+      break
+    }
+  }
+
+  // Cerca la chiave privata
+  for (const keyPath of possiblePrivateKeyPaths) {
+    if (fs.existsSync(keyPath)) {
+      foundPrivateKey = keyPath
+      detailDebugLog('Found private key at: ' + keyPath)
+      break
+    }
+  }
+
+  // Se trovato nella posizione PKI/own/cert, copialo nella posizione di default
+  if (foundCertificate && foundCertificate.includes('PKI/own/cert')) {
+    const defaultCertPath = path.join(nodeOPCUAClientPath, '/certificates/client_certificate.pem')
+    try {
+      // Crea la directory se non esiste
+      const defaultCertDir = path.dirname(defaultCertPath)
+      if (!fs.existsSync(defaultCertDir)) {
+        fs.mkdirSync(defaultCertDir, { recursive: true })
+      }
+
+      // Copia il certificato
+      if (!fs.existsSync(defaultCertPath)) {
+        fs.copyFileSync(foundCertificate, defaultCertPath)
+        detailDebugLog('Copied certificate from ' + foundCertificate + ' to ' + defaultCertPath)
+        foundCertificate = defaultCertPath
+      }
+    } catch (error) {
+      detailDebugLog('Error copying certificate: ' + error)
+    }
+  }
+
+  return {
+    certificateFile: foundCertificate,
+    privateKeyFile: foundPrivateKey
+  }
+}
+// -- LUCAT END
 
 interface OPCUAIIoTConnectorCredentials {
   user: string
@@ -228,17 +307,41 @@ module.exports = function (RED: nodered.NodeAPI) {
 
     const initCertificatesAndKeys = () => {
       if (this.securedCommunication) {
-        this.publicCertificateFile = this.publicCertificateFile || path.join(nodeOPCUAClientPath, '/certificates/client_selfsigned_cert_1024.pem')
+        // LUCAT - Usa la nuova funzione di ricerca automatica
+        const certificates = findAndSetupClientCertificates(nodeOPCUAClientPath)
+
+        this.publicCertificateFile = this.publicCertificateFile || certificates.certificateFile || path.join(nodeOPCUAClientPath, '/certificates/client_selfsigned_cert_1024.pem')
         detailDebugLog('using cert: ' + this.publicCertificateFile)
 
-        this.privateKeyFile = this.privateKeyFile || path.join(nodeOPCUAClientPath, '/certificates/PKI/own/private/private_key.pem')
+        this.privateKeyFile = this.privateKeyFile || certificates.privateKeyFile || path.join(nodeOPCUAClientPath, '/certificates/PKI/own/private/private_key.pem')
         detailDebugLog('using key: ' + this.privateKeyFile)
+
+        // Verifica che i file esistano
+        if (!fs.existsSync(this.publicCertificateFile)) {
+          this.warn('Client certificate file not found: ' + this.publicCertificateFile)
+          detailDebugLog('Available certificate locations checked:')
+          const possiblePaths = [
+            path.join(nodeOPCUAClientPath, '/certificates/'),
+            path.join(nodeOPCUAClientPath, '/certificates/PKI/own/cert/'),
+            path.join(process.cwd(), 'certificates/')
+          ]
+          possiblePaths.forEach(p => {
+            if (fs.existsSync(p)) {
+              const files = fs.readdirSync(p).filter(f => f.includes('.pem'))
+              detailDebugLog('  ' + p + ': ' + files.join(', '))
+            }
+          })
+        }
+
+        if (!fs.existsSync(this.privateKeyFile)) {
+          this.warn('Private key file not found: ' + this.privateKeyFile)
+        }
       } else {
         this.publicCertificateFile = null
         this.privateKeyFile = null
       }
     }
-
+    
     if (this.loginEnabled) {
       if (this.credentials) {
         this.iiot.userIdentity = {
