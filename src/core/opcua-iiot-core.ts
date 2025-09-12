@@ -117,12 +117,10 @@ export function shouldProcessMessage(node: any, msg: any, nodeType: string): boo
     // Set visual indicator that node is disabled
     setNodeStatusToDisabled(node);
 
-    // Log pass-through (only in debug mode to avoid spam)
-    logger.detailDebugLog(`${nodeType} node passing through message - disabled by IIOT_OPCUA_ENABLE`);
+    // Log that message is blocked (no pass-through)
+    logger.detailDebugLog(`${nodeType} node blocking message - disabled by global IIOT_OPCUA_ENABLE`);
 
-    // Pass message through unchanged
-    node.send(msg);
-
+    // Block the flow - do NOT send the message
     return false;
   }
 
@@ -153,18 +151,15 @@ export function shouldProcessMessageWithConnectorDynamicEnable(
       // Imposta status visivo per indicare che il connector è disabilitato
       setNodeStatusToConnectorDisabled(node)
 
-      // Log pass-through con valore effettivo valutato
+      // Log che il messaggio è bloccato (no pass-through)
       const dynamicEnableValue = (node.connector.dynamicEnable || "").trim()
       const fallbackMessage = !dynamicEnableValue ? " (using global IIOT_OPCUA_ENABLE)" : ""
-      logger.detailDebugLog(`${nodeType} node passing through message - connector disabled by dynamic-enable: '${dynamicEnableValue}'${fallbackMessage}`)
+      logger.detailDebugLog(`${nodeType} node blocking message - connector disabled by dynamic-enable: '${dynamicEnableValue}'${fallbackMessage}`)
 
-      // Passa messaggio attraverso unchanged
-      node.send(msg)
-
+      // Block the flow - do NOT send the message
       return false
     }
   }
-
   return true
 }
 

@@ -295,7 +295,7 @@ module.exports = (RED: NodeAPI) => {
     this.on('input', function (msg: NodeMessageInFlow, send: (msg: NodeMessage | Array<NodeMessage | NodeMessage[] | null>) => void, done: () => void) {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
       if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
-        return // Il messaggio è già stato inoltrato dalla funzione
+        return // Nodo disabilitato - flusso bloccato
       }
       if (!checkConnectorState(self, msg, 'Read', errorHandler, emitHandler, statusHandler)) {
         return
