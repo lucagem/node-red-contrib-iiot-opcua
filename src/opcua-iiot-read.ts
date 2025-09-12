@@ -87,17 +87,17 @@ module.exports = (RED: NodeAPI) => {
       if (!isConnectorEnabled) {
         // Imposta status disabilitato e non registrarsi al connector
         setNodeStatusToConnectorDisabled(self)
-        
+
         // Setup handler per passthrough dei messaggi
         self.on('input', (msg: NodeMessageInFlow) => {
           self.send(msg) // Passa attraverso unchanged
         })
-        
+
         // Setup handler per close senza timeout
         self.on('close', (done: () => void) => {
           done() // Chiusura immediata, nessuna connessione da chiudere
         })
-        
+
         return // Non procedere con registrazione al connector
       }
     }
@@ -294,7 +294,7 @@ module.exports = (RED: NodeAPI) => {
 
     this.on('input', function (msg: NodeMessageInFlow, send: (msg: NodeMessage | Array<NodeMessage | NodeMessage[] | null>) => void, done: () => void) {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
-      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'MethodCaller')) {
         return // Nodo disabilitato - flusso bloccato
       }
       if (!checkConnectorState(self, msg, 'Read', errorHandler, emitHandler, statusHandler)) {

@@ -221,7 +221,6 @@ module.exports = function (RED: nodered.NodeAPI) {
     this.keepSessionAlive = config.keepSessionAlive
     this.loginEnabled = config.loginEnabled
     this.name = config.name
-    this.dynamicEnable = config.dynamicEnable || ""  // LUCAT
     this.showErrors = config.showErrors
     this.securityPolicy = coerceSecurityPolicy(config.securityPolicy)
     this.messageSecurityMode = coerceMessageSecurityMode(config.securityMode) || MessageSecurityMode.None
@@ -239,7 +238,16 @@ module.exports = function (RED: nodered.NodeAPI) {
     this.reconnectDelay = config.reconnectDelay || RECONNECT_DELAY
     this.connectionStopDelay = config.connectionStopDelay || CONNECTION_STOP_DELAY
     this.maxBadSessionRequests = parseInt(config.maxBadSessionRequests?.toString()) || 10
-
+    // LUCAT - Precompila dynamicEnable con valore esplicito
+    if (!config.dynamicEnable || !config.dynamicEnable.trim()) {
+      // Se vuoto, usa il valore della variabile ambiente globale o default "true"
+      const globalValue = process.env.IIOT_OPCUA_ENABLE || "true"
+      this.dynamicEnable = globalValue
+      logger.internalDebugLog(`dynamicEnable was empty, set to global IIOT_OPCUA_ENABLE: '${globalValue}'`)
+    } else {
+      this.dynamicEnable = config.dynamicEnable.trim()
+      logger.internalDebugLog(`dynamicEnable explicitly set to: '${this.dynamicEnable}'`)
+    }
     // LUCAT
     const evaluateDynamicEnable = (): boolean => {
       const value = this.dynamicEnable.trim()
@@ -341,7 +349,7 @@ module.exports = function (RED: nodered.NodeAPI) {
         this.privateKeyFile = null
       }
     }
-    
+
     if (this.loginEnabled) {
       if (this.credentials) {
         this.iiot.userIdentity = {

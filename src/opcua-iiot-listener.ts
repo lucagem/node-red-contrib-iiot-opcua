@@ -10,9 +10,9 @@
 'use strict'
 
 import * as nodered from "node-red";
-import {NodeMessage, NodeStatus} from "node-red";
-import {Node, NodeMessageInFlow} from "@node-red/registry";
-import {TodoTypeAny, TodoVoidFunction} from "./types/placeholders";
+import { NodeMessage, NodeStatus } from "node-red";
+import { Node, NodeMessageInFlow } from "@node-red/registry";
+import { TodoTypeAny, TodoVoidFunction } from "./types/placeholders";
 import _ from 'underscore';
 import coreListener from "./core/opcua-iiot-core-listener";
 import {
@@ -39,8 +39,8 @@ import {
 } from "node-opcua";
 
 import coreClient from "./core/opcua-iiot-core-client";
-import {EventPayloadLike} from "./opcua-iiot-event";
-import {isArray} from "./types/assertion";
+import { EventPayloadLike } from "./opcua-iiot-event";
+import { isArray } from "./types/assertion";
 
 interface OPCUAIIoTCMD extends nodered.Node {
   action: string
@@ -67,7 +67,7 @@ interface OPCUAIIoTCMDDef extends nodered.NodeDef {
 }
 
 
-export type ListenPayload = TodoTypeAny &{
+export type ListenPayload = TodoTypeAny & {
   injectType: 'listen',
   value: TodoTypeAny
 }
@@ -102,17 +102,17 @@ module.exports = (RED: nodered.NodeAPI) => {
       if (!isConnectorEnabled) {
         // Imposta status disabilitato e non registrarsi al connector
         setNodeStatusToConnectorDisabled(self)
-        
+
         // Setup handler per passthrough dei messaggi
         self.on('input', (msg: NodeMessageInFlow) => {
           self.send(msg) // Passa attraverso unchanged
         })
-        
+
         // Setup handler per close senza timeout
         self.on('close', (done: () => void) => {
           done() // Chiusura immediata, nessuna connessione da chiudere
         })
-        
+
         return // Non procedere con registrazione al connector
       }
     }
@@ -120,7 +120,7 @@ module.exports = (RED: nodered.NodeAPI) => {
     /* #########   FSM EVENTS  #########     */
 
     const fsmEventHandlerFunction = function (state: any) {
-      if(!state.changed) return
+      if (!state.changed) return
 
       switch (state.value) {
         case FsmListenerStates.StateStarted:
@@ -189,7 +189,7 @@ module.exports = (RED: nodered.NodeAPI) => {
       const dynamicOptions = (msg.payload.listenerParameters) ? msg.payload.listenerParameters.options : msg.payload.options
       coreListener.internalDebugLog('create subscription, type: ' + self.action)
       const options = dynamicOptions ||
-      self.action === 'events'
+        self.action === 'events'
         ? coreListener.getEventSubscriptionParameters(timeMilliseconds)
         : coreListener.getSubscriptionParameters(timeMilliseconds);
 
@@ -217,7 +217,7 @@ module.exports = (RED: nodered.NodeAPI) => {
       subscription.on('internal_error', (err: Error) => {
         coreListener.internalDebugLog('internal_error: ' + err.message)
         if (self.showErrors) {
-          this.error(err, {payload: 'Internal Error'})
+          this.error(err, { payload: 'Internal Error' })
         }
         self.oldStatusParameter = setNodeStatusTo(this, 'error', self.oldStatusParameter, self.showStatusActivities, statusHandler)
         self.iiot.stateService.send('ERROR')
@@ -258,10 +258,10 @@ module.exports = (RED: nodered.NodeAPI) => {
       let addressSpaceItems: TodoTypeAny[] = []
 
       self.iiot.monitoredASO.forEach(function (key: TodoTypeAny) {
-        addressSpaceItems.push({name: '', nodeId: key, datatypeName: ''})
+        addressSpaceItems.push({ name: '', nodeId: key, datatypeName: '' })
       })
 
-      this.send(({payload: payload, addressSpaceItems: addressSpaceItems} as TodoTypeAny))
+      this.send(({ payload: payload, addressSpaceItems: addressSpaceItems } as TodoTypeAny))
 
       self.iiot.monitoredItems.clear()
       self.iiot.monitoredASO.clear()
@@ -310,12 +310,12 @@ module.exports = (RED: nodered.NodeAPI) => {
               self.iiot.monitoredItemGroup = result.monitoredItemGroup
             }
           }).catch((err: Error) => {
-          coreListener.subscribeDebugLog('Monitoring Build Item Group Error')
-          coreListener.subscribeDebugLog(err)
-          if (self.showErrors) {
-            this.error(err, msg)
-          }
-        })
+            coreListener.subscribeDebugLog('Monitoring Build Item Group Error')
+            coreListener.subscribeDebugLog(err)
+            if (self.showErrors) {
+              this.error(err, msg)
+            }
+          })
       }
     }
 
@@ -417,12 +417,12 @@ module.exports = (RED: nodered.NodeAPI) => {
                 })
               }
             }).catch((err: Error) => {
-            coreListener.eventDebugLog('Build Event Error')
-            coreListener.eventDebugLog(err)
-            if (self.showErrors) {
-              this.error(err, msg)
-            }
-          })
+              coreListener.eventDebugLog('Build Event Error')
+              coreListener.eventDebugLog(err)
+              if (self.showErrors) {
+                this.error(err, msg)
+              }
+            })
         } else {
           coreListener.eventDebugLog('Terminate Event Item' + nodeIdToMonitor)
           const eventMessage = Object.assign({}, msg)
@@ -518,7 +518,7 @@ module.exports = (RED: nodered.NodeAPI) => {
         const error = new Error(monitoredItem.itemToMonitor.nodeId.toString() + ': ' + (err?.message || err))
         coreListener.internalDebugLog('monitoredItem Error: ' + error + ' on ' + monitoredItem.itemToMonitor.nodeId)
         if (self.showErrors) {
-          this.error(error, ({payload: 'Monitored Item Error', monitoredItem: monitoredItem} as TodoTypeAny))
+          this.error(error, ({ payload: 'Monitored Item Error', monitoredItem: monitoredItem } as TodoTypeAny))
         }
 
         updateMonitoredItemLists(monitoredItem, monitoredItem.itemToMonitor.nodeId)
@@ -551,7 +551,7 @@ module.exports = (RED: nodered.NodeAPI) => {
 
       let msg: TodoTypeAny = {
         payload: {
-          addressSpaceItems: [{name: '', nodeId, datatypeName: ''}],
+          addressSpaceItems: [{ name: '', nodeId, datatypeName: '' }],
           nodeId,
           nodetype: 'listen',
           injectType: 'subscribe'
@@ -578,7 +578,7 @@ module.exports = (RED: nodered.NodeAPI) => {
         }
       } else {
         msg.payload = {
-          ... msg.payload,
+          ...msg.payload,
           value: dataValue,
           statusCode: monitoredItem.statusCode,
           itemToMonitor: monitoredItem.itemToMonitor,
@@ -607,7 +607,7 @@ module.exports = (RED: nodered.NodeAPI) => {
           msg.error = err.message
         }
       } else {
-        msg.payload = {...msg.payload, value: dataValue, eventResults, monitoredItem}
+        msg.payload = { ...msg.payload, value: dataValue, eventResults, monitoredItem }
       }
 
       this.send(msg)
@@ -629,7 +629,7 @@ module.exports = (RED: nodered.NodeAPI) => {
 
       let msg = {
         payload: {
-          addressSpaceItems: [{name: '', nodeId: nodeId, datatypeName: ''}],
+          addressSpaceItems: [{ name: '', nodeId: nodeId, datatypeName: '' }],
           nodeId,
           nodetype: 'listen',
           injectType: 'event'
@@ -641,15 +641,15 @@ module.exports = (RED: nodered.NodeAPI) => {
         .then((eventResults: TodoTypeAny) => {
           handleEventResults(msg, dataValue, eventResults, monitoredItem)
         }).catch((err: Error) => {
-        (isInitializedIIoTNode(this)) ? errorHandling(err) : coreListener.internalDebugLog(err.message)
-      })
+          (isInitializedIIoTNode(this)) ? errorHandling(err) : coreListener.internalDebugLog(err.message)
+        })
     }
 
     const errorHandling = (err: Error) => {
       coreListener.internalDebugLog('Basic Error Handling')
       coreListener.internalDebugLog(err)
       if (self.showErrors) {
-        this.error(err, {payload: 'Error Handling'})
+        this.error(err, { payload: 'Error Handling' })
       }
 
       if (err) {
@@ -704,9 +704,9 @@ module.exports = (RED: nodered.NodeAPI) => {
 
     this.on('input', (msg: NodeMessageInFlow) => {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
-      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
-        return // Il messaggio è già stato inoltrato dalla funzione
-      }      
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Listener')) {
+        return // Nodo disabilitato - flusso bloccato
+      }
       if (!checkConnectorState(self, msg, 'Listener', errorHandler, emitHandler, statusHandler)) {
         return
       }
@@ -846,50 +846,50 @@ module.exports = (RED: nodered.NodeAPI) => {
       })
     })
 
-/*
-    self.iiot.stateMachine.onIDLE = function () {
-      coreListener.detailDebugLog('Listener IDLE Event FSM')
-    }
-
-    self.iiot.stateMachine.onREQUESTED = function () {
-      coreListener.detailDebugLog('Listener REQUESTED Event FSM')
-    }
-
-    self.iiot.stateMachine.onINIT = function () {
-      coreListener.detailDebugLog('Listener INIT Event FSM')
-    }
-
-    self.iiot.stateMachine.onSTARTED = function () {
-      coreListener.detailDebugLog('Listener STARTED Event FSM')
-
-      switch (self.action) {
-        case 'subscribe':
-          while (self.iiot.messageQueue.length > 0) {
-            subscribeMonitoredItem(self.iiot.messageQueue.shift())
+    /*
+        self.iiot.stateMachine.onIDLE = function () {
+          coreListener.detailDebugLog('Listener IDLE Event FSM')
+        }
+    
+        self.iiot.stateMachine.onREQUESTED = function () {
+          coreListener.detailDebugLog('Listener REQUESTED Event FSM')
+        }
+    
+        self.iiot.stateMachine.onINIT = function () {
+          coreListener.detailDebugLog('Listener INIT Event FSM')
+        }
+    
+        self.iiot.stateMachine.onSTARTED = function () {
+          coreListener.detailDebugLog('Listener STARTED Event FSM')
+    
+          switch (self.action) {
+            case 'subscribe':
+              while (self.iiot.messageQueue.length > 0) {
+                subscribeMonitoredItem(self.iiot.messageQueue.shift())
+              }
+              break
+            case 'events':
+              while (self.iiot.messageQueue.length > 0) {
+                subscribeMonitoredEvent(self.iiot.messageQueue.shift())
+              }
+              break
+            default:
+              coreListener.internalDebugLog('Unknown Action Type ' + self.action)
           }
-          break
-        case 'events':
-          while (self.iiot.messageQueue.length > 0) {
-            subscribeMonitoredEvent(self.iiot.messageQueue.shift())
-          }
-          break
-        default:
-          coreListener.internalDebugLog('Unknown Action Type ' + self.action)
-      }
-    }
-
-    self.iiot.stateMachine.onTERMINATED = function () {
-      coreListener.detailDebugLog('Listener TERMINATED Event FSM')
-    }
-
-    self.iiot.stateMachine.onERROR = function () {
-      coreListener.detailDebugLog('Listener ERROR Event FSM')
-    }
-
-    self.iiot.stateMachine.onEND = function () {
-      coreListener.detailDebugLog('Listener END Event FSM')
-    }
-    */
+        }
+    
+        self.iiot.stateMachine.onTERMINATED = function () {
+          coreListener.detailDebugLog('Listener TERMINATED Event FSM')
+        }
+    
+        self.iiot.stateMachine.onERROR = function () {
+          coreListener.detailDebugLog('Listener ERROR Event FSM')
+        }
+    
+        self.iiot.stateMachine.onEND = function () {
+          coreListener.detailDebugLog('Listener END Event FSM')
+        }
+        */
   }
 
 

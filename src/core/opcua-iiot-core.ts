@@ -171,14 +171,13 @@ export function shouldProcessMessageWithConnectorDynamicEnable(
 export function evaluateConnectorDynamicEnable(connector: any): boolean {
   const dynamicEnableValue = (connector.dynamicEnable || "").trim();
 
+  // Ora dynamicEnable dovrebbe sempre avere un valore (precompilato dal connector)
   if (!dynamicEnableValue) {
-    // Se vuoto, usa il controllo globale
-    const globalEnabled = isOpcUaIIoTEnabled(); // Senza parametri = controllo globale
-    logger.detailDebugLog(`dynamicEnable empty, using global: ${globalEnabled}`);
-    return globalEnabled;
+    logger.detailDebugLog(`dynamicEnable unexpectedly empty, defaulting to enabled`);
+    return true; // Fallback di sicurezza
   }
 
-  // Usa il valore dinamico del connector
+  // Valuta il valore dinamico del connector
   return isOpcUaIIoTEnabled(dynamicEnableValue);
 }
 
