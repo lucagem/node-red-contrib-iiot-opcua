@@ -55,26 +55,39 @@ import { OPCUAClientOptions } from "node-opcua-client/dist/opcua_client";
 let OPCUA_IIOT_ENABLED: boolean | null = null;
 
 /**
- * LUCAT - Check if OPC UA IIoT nodes should be enabled based on environment variable
- * IIOT_OPCUA_ENABLE - if set to "0", "false", "FALSE", "False" etc. disables all nodes
- * @returns {boolean} true if nodes should be enabled, false if disabled
+ * LUCAT - Valuta se un valore di enable è abilitato o disabilitato
+ * @param value Valore da valutare (può essere undefined/empty per default enabled)
+ * @returns true se abilitato, false se disabilitato
  */
-export function isOpcUaIIoTEnabled(): boolean {
-  // Check only once at startup to avoid performance impact
+export function evaluateEnableValue(value?: string): boolean {
+  if (!value || !value.trim()) {
+    return true; // Default enabled se vuoto
+  }
+
+  const trimmedValue = value.trim();
+  const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off'];
+
+  return !disabledValues.includes(trimmedValue);
+}
+
+/**
+ * LUCAT - Check if OPC UA IIoT nodes should be enabled based on dynamic value or global env
+ * @param dynamicValue Valore dinamico specifico (se presente)
+ * @returns true if nodes should be enabled, false if disabled
+ */
+export function isOpcUaIIoTEnabled(dynamicValue?: string): boolean {
+  if (dynamicValue !== undefined) {
+    // Usa il valore dinamico passato
+    const result = evaluateEnableValue(dynamicValue);
+    logger.detailDebugLog(`Dynamic enable '${dynamicValue}' evaluated as ${result ? 'ENABLED' : 'DISABLED'}`);
+    return result;
+  }
+
+  // Fallback al controllo globale (solo la prima volta)
   if (OPCUA_IIOT_ENABLED === null) {
-    const envValue = process.env.IIOT_OPCUA_ENABLE;
-
-    if (!envValue) {
-      // If variable not set, default to enabled
-      OPCUA_IIOT_ENABLED = true;
-    } else {
-      // Check for disabled values: 0, false, FALSE, False, etc.
-      const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off'];
-      OPCUA_IIOT_ENABLED = !disabledValues.includes(envValue.trim());
-    }
-
-    // Log the state for debugging
-    logger.internalDebugLog(`OPC UA IIoT nodes ${OPCUA_IIOT_ENABLED ? 'ENABLED' : 'DISABLED'} by environment variable IIOT_OPCUA_ENABLE=${envValue || 'undefined'}`);
+    const globalValue = process.env.IIOT_OPCUA_ENABLE;
+    OPCUA_IIOT_ENABLED = evaluateEnableValue(globalValue);
+    logger.internalDebugLog(`Global IIOT_OPCUA_ENABLE='${globalValue || ''}' evaluated as ${OPCUA_IIOT_ENABLED ? 'ENABLED' : 'DISABLED'}`);
   }
 
   return OPCUA_IIOT_ENABLED;
@@ -134,15 +147,16 @@ export function shouldProcessMessageWithConnectorDynamicEnable(
   }
 
   // Poi controlla il dynamic-enable del connector
-  if (node.connector && node.connector.dynamicEnable !== undefined) {
+  if (node.connector && 'dynamicEnable' in node.connector) {
     const isConnectorEnabled = evaluateConnectorDynamicEnable(node.connector)
-
     if (!isConnectorEnabled) {
       // Imposta status visivo per indicare che il connector è disabilitato
       setNodeStatusToConnectorDisabled(node)
 
-      // Log pass-through
-      logger.detailDebugLog(`${nodeType} node passing through message - connector disabled by dynamic-enable: ${node.connector.dynamicEnable}`)
+      // Log pass-through con valore effettivo valutato
+      const dynamicEnableValue = (node.connector.dynamicEnable || "").trim()
+      const fallbackMessage = !dynamicEnableValue ? " (using global IIOT_OPCUA_ENABLE)" : ""
+      logger.detailDebugLog(`${nodeType} node passing through message - connector disabled by dynamic-enable: '${dynamicEnableValue}'${fallbackMessage}`)
 
       // Passa messaggio attraverso unchanged
       node.send(msg)
@@ -160,32 +174,17 @@ export function shouldProcessMessageWithConnectorDynamicEnable(
  * @returns true se abilitato, false se disabilitato
  */
 export function evaluateConnectorDynamicEnable(connector: any): boolean {
-  const value = (connector.dynamicEnable || "").trim()
+  const dynamicEnableValue = (connector.dynamicEnable || "").trim();
 
-  // Se vuoto, usa la logica globale esistente
-  if (!value) {
-    return isOpcUaIIoTEnabled()
+  if (!dynamicEnableValue) {
+    // Se vuoto, usa il controllo globale
+    const globalEnabled = isOpcUaIIoTEnabled(); // Senza parametri = controllo globale
+    logger.detailDebugLog(`dynamicEnable empty, using global: ${globalEnabled}`);
+    return globalEnabled;
   }
 
-  // Se è una variabile di ambiente (${...})
-  if (value.startsWith('${') && value.endsWith('}')) {
-    const envVar = value.slice(2, -1)
-    const envValue = process.env[envVar]
-
-    if (!envValue) return true // Default enabled
-
-    const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
-    return !disabledValues.includes(envValue.trim())
-  }
-
-  // Valori diretti
-  const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
-  const enabledValues = ['1', 'true', 'TRUE', 'True', 't', 'T', 'yes', 'YES', 'Yes', 'on', 'ON', 'On']
-
-  if (disabledValues.includes(value)) return false
-  if (enabledValues.includes(value)) return true
-
-  return true // Default enabled
+  // Usa il valore dinamico del connector
+  return isOpcUaIIoTEnabled(dynamicEnableValue);
 }
 
 /**
