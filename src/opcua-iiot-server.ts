@@ -122,7 +122,7 @@ module.exports = (RED: nodered.NodeAPI) => {
 
     this.on('input', (msg: TodoTypeAny) => {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
-      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Server')) {
         return // Il messaggio è già stato inoltrato dalla funzione
       }        
       if (!self.iiot.opcuaServer || !self.iiot.initialized) {

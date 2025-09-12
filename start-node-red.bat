@@ -30,6 +30,7 @@ echo.
 
 cd node-red-test
 REM imposto che voglio vedere i debug per il nodo core
-set DEBUG=opcuaIIoT:core,opcuaIIoT:write
+REM set DEBUG=opcuaIIoT:core,opcuaIIoT:write,opcuaIIoT:connector*
+set DEBUG=opcuaIIoT:*
 set OPC_ENABLE=1
 npx node-red --userDir ".\.node-red"

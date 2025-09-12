@@ -204,7 +204,7 @@ module.exports = (RED: nodered.NodeAPI) => {
 
     this.on('input', function (msg: TodoTypeAny) {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
-      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'MethodCaller')) {
         return // Il messaggio è già stato inoltrato dalla funzione
       }        
       if (!checkConnectorState(self, msg, 'MethodCaller', errorHandler, emitHandler, statusHandler)) {

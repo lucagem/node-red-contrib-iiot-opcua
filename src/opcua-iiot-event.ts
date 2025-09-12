@@ -108,7 +108,7 @@ module.exports = function (RED: nodered.NodeAPI) {
     statusCall({fill: 'blue', shape: 'ring', text: 'new'})
     this.on('input', (msg: NodeMessageInFlow) => {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
-      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Event')) {
         return // Il messaggio è già stato inoltrato dalla funzione
       }        
       self.iiot.subscribed = !self.iiot.subscribed

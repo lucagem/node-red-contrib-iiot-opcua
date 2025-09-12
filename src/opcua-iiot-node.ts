@@ -98,7 +98,7 @@ module.exports = (RED: nodered.NodeAPI) => {
 
     this.on('input', (msg: NodeMessageInFlow) => {
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
-      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
+      if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Node')) {
         return // Il messaggio è già stato inoltrato dalla funzione
       }  
       self.toggleNodeStatusSymbol();
