@@ -88,16 +88,10 @@ module.exports = (RED: NodeAPI) => {
         // Imposta status disabilitato e non registrarsi al connector
         setNodeStatusToConnectorDisabled(self)
 
-        // Setup handler per passthrough dei messaggi
-        self.on('input', (msg: NodeMessageInFlow) => {
-          self.send(msg) // Passa attraverso unchanged
-        })
-
         // Setup handler per close senza timeout
         self.on('close', (done: () => void) => {
           done() // Chiusura immediata, nessuna connessione da chiudere
         })
-
         return // Non procedere con registrazione al connector
       }
     }
@@ -293,19 +287,13 @@ module.exports = (RED: NodeAPI) => {
     }
 
     this.on('input', function (msg: NodeMessageInFlow, send: (msg: NodeMessage | Array<NodeMessage | NodeMessage[] | null>) => void, done: () => void) {
-      console.log('==== READ.ts: Ricevuto messaggio:', JSON.stringify(msg.payload))
-
       // LUCAT - CONTROLLO DYNAMIC ENABLE - PRIMA DI TUTTO
       if (!shouldProcessMessageWithConnectorDynamicEnable(self, msg, 'Read')) {
-        console.log('==== read.ts: BLOCCATO dal controllo!')
         return // Nodo disabilitato - flusso bloccato
       }
-      console.log('==== read.ts: PASSATO il controllo, procedo...')
-
       if (!checkConnectorState(self, msg, 'Read', errorHandler, emitHandler, statusHandler)) {
         return
       }
-
       try {
         readFromSession(self.connector.iiot.opcuaSession, buildNodesToRead(msg.payload), msg)
       } /* istanbul ignore next */ catch (err: any) {

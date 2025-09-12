@@ -82,17 +82,10 @@ module.exports = (RED: nodered.NodeAPI) => {
       if (!isConnectorEnabled) {
         // Imposta status disabilitato e non registrarsi al connector
         setNodeStatusToConnectorDisabled(self)
-        
-        // Setup handler per passthrough dei messaggi
-        self.on('input', (msg: NodeMessageInFlow) => {
-          self.send(msg) // Passa attraverso unchanged
-        })
-        
         // Setup handler per close senza timeout
         self.on('close', (done: () => void) => {
           done() // Chiusura immediata, nessuna connessione da chiudere
-        })
-        
+        })        
         return // Non procedere con registrazione al connector
       }
     }
