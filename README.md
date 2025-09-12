@@ -30,7 +30,12 @@ Full support for multiple OPC UA array data types, with improved handling and ty
 
 ## 📦 Installation
 
+**Please remove the library "install node-red-contrib-iiot-opcua"** if present.
+
 ```bash
+# if the "node-red-contrib-iiot-opcua" is present, remove before install
+npm remove node-red-contrib-iiot-opcua
+# intall the library
 npm install node-red-contrib-iiot-opcua-gem
 ```
 
@@ -53,17 +58,6 @@ In the **OPCUA-IIoT-Connector** settings:
 - **Empty** → Uses the global `IIOT_OPCUA_ENABLE` environment variable  
 - **Static values** → `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no`  
 - **Environment variables** → `${MY_CUSTOM_VAR}`, `${PRODUCTION_MODE}`, etc.  
-
-**Examples:**  
-
-```bash
-# Global disable
-export IIOT_OPCUA_ENABLE=false
-
-# Custom environment toggle
-export PRODUCTION_MODE=true
-# Connector Dynamic Enable field: ${PRODUCTION_MODE}
-```
 
 ---
 
