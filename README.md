@@ -151,7 +151,7 @@ BSD-3-Clause (same as the original project).
 
 ## 🔄 Version History
 
-### v4.2.0 (Current)  
+### v4.3.0 (Current)  
 - ✨ Introduced Dynamic Enable/Disable functionality  
 - 📊 Added extended array support  
 - 🏷️ GEM edition branding and docs  
