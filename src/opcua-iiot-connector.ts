@@ -44,10 +44,9 @@ import { OPCUAClientOptions } from "node-opcua-client/dist/opcua_client";
 import internalDebugLog = logger.internalDebugLog;
 import detailDebugLog = logger.detailDebugLog;
 import { getEnumKeys } from "./types/helpers";
-import { createMachine, interpret } from "@xstate/fsm"
-import { TodoTypeAny } from "./types/placeholders";
 //LUCAT START
-import { isOpcUaIIoTEnabled, setNodeStatusToDisabled } from './core/opcua-iiot-core'
+// import { createMachine, interpret } from "@xstate/fsm"
+// import { TodoTypeAny } from "./types/placeholders";
 import * as fs from 'fs'
 /**
  * LUCAT - Funzione per trovare automaticamente i certificati client
@@ -248,47 +247,20 @@ module.exports = function (RED: nodered.NodeAPI) {
       this.dynamicEnable = config.dynamicEnable.trim()
       logger.internalDebugLog(`dynamicEnable explicitly set to: '${this.dynamicEnable}'`)
     }
-    // LUCAT
-    const evaluateDynamicEnable = (): boolean => {
-      const value = this.dynamicEnable.trim()
 
-      // Se vuoto, usa la logica esistente (variabile ambiente globale)
-      if (!value) {
-        return isOpcUaIIoTEnabled()
-      }
+    // LUCAT - Controllo early del connector - se disabilitato, non avviare nulla
+    const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
+    if (disabledValues.includes(this.dynamicEnable)) {
+      internalDebugLog('Connector disabled by dynamicEnable setting: ' + this.dynamicEnable)
+      this.status({ fill: 'grey', shape: 'dot', text: 'disabled by dynamicEnable' })
 
-      // Se è una variabile di ambiente (${...})
-      if (value.startsWith('${') && value.endsWith('}')) {
-        const envVar = value.slice(2, -1) // Rimuove ${ e }
-        const envValue = process.env[envVar]
-
-        if (!envValue) return true // Default enabled se variabile non esiste
-
-        const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
-        return !disabledValues.includes(envValue.trim())
-      }
-
-      // Valori diretti
-      const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
-      const enabledValues = ['1', 'true', 'TRUE', 'True', 't', 'T', 'yes', 'YES', 'Yes', 'on', 'ON', 'On']
-
-      if (disabledValues.includes(value)) return false
-      if (enabledValues.includes(value)) return true
-
-      return true // Default enabled per valori non riconosciuti
-    }
-    // LUCAT - return if not enabled!
-    if (!evaluateDynamicEnable()) {
-      setNodeStatusToDisabled(this as any)
-      internalDebugLog('Connector disabled by dynamic-enable setting: ' + this.dynamicEnable)
-      // handler per chiusura rapida
+      // Setup handler per chiusura rapida
       this.on('close', (done: () => void) => {
         internalDebugLog('Closing disabled connector - no connections to close')
         done() // Chiusura immediata
       })
-      return // <-- Se arriva qui, tutto il resto viene saltato
+      return // <-- BLOCCA tutto il resto dell'inizializzazione
     }
-
     this.iiot = coreConnector.initConnectorNode()
 
     if (!this.iiot) throw Error('IIoT Initialization Failed')
