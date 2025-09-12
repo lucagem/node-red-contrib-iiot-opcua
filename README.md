@@ -1,25 +1,32 @@
 # node-red-contrib-iiot-opcua-gem
 
-**Enhanced Industrial IoT OPC UA toolbox for Node-RED with array support and dynamic enable/disable features - GEM edition**
+**Enhanced Industrial IoT OPC UA toolbox for Node-RED with extended array handling and dynamic enable/disable features – GEM Edition**
 
-Based on the excellent [node-red-contrib-iiot-opcua](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua) by Klaus Landsdorf, this enhanced version adds powerful new capabilities for industrial automation scenarios.
+This package builds upon the excellent [node-red-contrib-iiot-opcua](https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua) by Klaus Landsdorf.  
+The GEM edition introduces additional features designed for modern industrial automation scenarios.  
+
+---
 
 ## 🆕 New Features (GEM Edition)
 
-### 🔧 Dynamic Enable/Disable System
-Control OPC-UA nodes dynamically through environment variables or static values:
+### 🔧 Dynamic Enable/Disable
+The **OPCUA-IIoT-Connector** now provides a **Dynamic Enable** field, located directly below the **Name** field.  
 
-- **Global Control**: Set `IIOT_OPCUA_ENABLE=false` to disable all nodes
-- **Per-Node Control**: Individual Dynamic Enable field in Connector configuration
-- **Flexible Values**: Supports `true/false`, `1/0`, `on/off`, `yes/no`, and custom environment variables like `${MY_OPCUA_ENABLE}`
-- **Runtime Control**: Enable/disable nodes without code changes
+This feature allows you to disable nodes using either a **fixed value** or a **dynamic value** sourced from an environment variable.  
 
-### 📊 Enhanced Array Support
-Extended support for OPC-UA array data types:
+- Leave the field **empty** to preserve the default **Enabled** status (all nodes active).  
+- Use **Flexible Values** such as `true/false`, `1/0`, `on/off`, `yes/no`, or environment variables like `${OPCUA_ENABLE}`.  
 
-- **Multiple Array Types**: Support for various array configurations
-- **Improved Data Handling**: Better parsing and processing of array values
-- **Type Safety**: Enhanced TypeScript definitions for array operations
+---
+
+### 📊 Extended Array Support
+Full support for multiple OPC UA array data types, with improved handling and type safety:  
+
+- **Broader Array Coverage**: Support for UInt16, UInt32, UInt64, Float, Double, Int16, Int32, Int64, Boolean, String, SByte  
+- **Improved Parsing & Processing**: Reliable array read/write operations  
+- **TypeScript Definitions**: Stronger typing for development consistency  
+
+---
 
 ## 📦 Installation
 
@@ -27,122 +34,136 @@ Extended support for OPC-UA array data types:
 npm install node-red-contrib-iiot-opcua-gem
 ```
 
+---
+
 ## 🚀 Quick Start
 
-1. **Install the package** in your Node-RED environment
-2. **Drag OPC-UA IIoT nodes** from the palette to your flow
-3. **Configure Connector** with your OPC-UA server details
-4. **Set Dynamic Enable** (optional) for conditional node operation
-5. **Deploy and connect** to your OPC-UA server
+1. Install the package in your Node-RED environment.  
+2. Drag OPC UA IIoT nodes from the palette into your flow.  
+3. Configure the **Connector** with OPC UA server details.  
+4. (Optional) Set **Dynamic Enable** for conditional connectivity.  
+5. Deploy and connect.  
 
-### Dynamic Enable Configuration
+---
 
-In the **OPCUA-IIoT-Connector** configuration:
+### 🔧 Dynamic Enable Configuration
 
-- **Empty**: Uses global `IIOT_OPCUA_ENABLE` environment variable
-- **Static values**: `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no`
-- **Environment variables**: `${MY_CUSTOM_VAR}`, `${PRODUCTION_MODE}`, etc.
+In the **OPCUA-IIoT-Connector** settings:  
 
-**Examples:**
+- **Empty** → Uses the global `IIOT_OPCUA_ENABLE` environment variable  
+- **Static values** → `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no`  
+- **Environment variables** → `${MY_CUSTOM_VAR}`, `${PRODUCTION_MODE}`, etc.  
+
+**Examples:**  
+
 ```bash
 # Global disable
 export IIOT_OPCUA_ENABLE=false
 
-# Custom per-environment
+# Custom environment toggle
 export PRODUCTION_MODE=true
-# Then use ${PRODUCTION_MODE} in Dynamic Enable field
+# Connector Dynamic Enable field: ${PRODUCTION_MODE}
 ```
+
+---
 
 ## 📋 Available Nodes
 
-- **OPCUA-IIoT-Connector** - Server connection with dynamic enable
-- **OPCUA-IIoT-Inject** - Inject data with array support
-- **OPCUA-IIoT-Read** - Read values and arrays
-- **OPCUA-IIoT-Write** - Write values and arrays
-- **OPCUA-IIoT-Listener** - Monitor changes
-- **OPCUA-IIoT-Browser** - Browse address space
-- **OPCUA-IIoT-Server** - Create OPC-UA server
-- **OPCUA-IIoT-Method-Caller** - Call OPC-UA methods
-- And more...
+- **OPCUA-IIoT-Connector** – Configurable connector with dynamic enable  
+- **OPCUA-IIoT-Inject** – Inject values, including arrays  
+- **OPCUA-IIoT-Read** – Read scalar and array values  
+- **OPCUA-IIoT-Write** – Write scalar and array values  
+- **OPCUA-IIoT-Listener** – Monitor node changes  
+- **OPCUA-IIoT-Browser** – Explore the address space  
+- **OPCUA-IIoT-Server** – Create an OPC UA server  
+- **OPCUA-IIoT-Method-Caller** – Execute OPC UA methods  
+
+---
 
 ## 🏭 Use Cases
 
 ### Industrial Automation
-- **Production Lines**: Monitor PLCs with conditional connectivity
-- **Quality Control**: Array-based sensor data collection
-- **Environment Control**: Enable/disable based on operational status
+- **Production Lines**: Conditional OPC UA connectivity to PLCs  
+- **Quality Control**: Manage and analyze array-based sensor data  
+- **Environment Control**: Toggle nodes based on plant conditions  
 
 ### Development & Testing
-- **Staging Environments**: Use environment variables to control connections
-- **Integration Testing**: Programmatic enable/disable of OPC-UA connectivity
-- **Multi-tenant Deployments**: Per-tenant OPC-UA configuration
+- **Staging Environments**: Enable/disable via environment variables  
+- **Integration Testing**: Scripted toggling of OPC UA connections  
+- **Multi-tenant Systems**: Environment-variable driven configurations  
+
+---
 
 ## 🛠️ Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `IIOT_OPCUA_ENABLE` | Global enable/disable for all nodes | `true` |
-| Custom variables | Use `${VARIABLE_NAME}` in Dynamic Enable field | - |
+| Variable            | Description                         | Default |
+|---------------------|-------------------------------------|---------|
+| `IIOT_OPCUA_ENABLE` | Global enable/disable for all nodes | `true`  |
+| Custom variables    | `${VARIABLE_NAME}` in Dynamic Enable | -       |
 
-**Accepted Values:** `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no` (case-insensitive)
+**Accepted Values:** `true`, `false`, `1`, `0`, `on`, `off`, `yes`, `no` (case-insensitive)  
 
-## 📚 Examples
+---
+### Array Handling
+Enhanced reading/writing of arrays with improved error handling and typing.  
 
-### Basic Connection with Dynamic Enable
-
-```javascript
-// Environment
-process.env.PRODUCTION_READY = "true";
-
-// In Connector Dynamic Enable field: ${PRODUCTION_READY}
-// Node will only connect when PRODUCTION_READY=true
-```
-
-### Array Data Handling
-
-Enhanced support for reading and writing array values from/to OPC-UA servers, with improved type safety and error handling.
+---
 
 ## 🔗 Original Project
 
-This project is based on **node-red-contrib-iiot-opcua** by Klaus Landsdorf and contributors:
-- Original repository: https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua
-- Documentation: https://noderedplus.de/
+This project extends **node-red-contrib-iiot-opcua** by Klaus Landsdorf:  
+- Repository: https://github.com/BiancoRoyal/node-red-contrib-iiot-opcua  
+- Documentation: https://noderedplus.de/  
+
+---
 
 ## 🏢 About GEM s.r.l.
 
-Enhanced by [GEM s.r.l.](https://www.gemsrl.it/) for industrial automation and IoT applications.
+Enhancements provided by [GEM s.r.l.](https://www.gemsrl.it/) for industrial IoT and automation.  
 
-**Enhancements by:** Luca Tralli  
+**Lead Developer:** Luca Tralli  
 **Company:** GEM s.r.l.  
-**Website:** https://www.gemsrl.it/
+
+---
 
 ## 📄 License
+BSD-3-Clause (same as the original project).  
 
-BSD-3-Clause (same as original project)
+---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Fork the repository  
+2. Create a feature branch (`git checkout -b feature/my-feature`)  
+3. Commit your changes (`git commit -m "Add new feature"`)  
+4. Push to your fork (`git push origin feature/my-feature`)  
+5. Submit a Pull Request  
+
+---
 
 ## 📞 Support
 
-- **Issues**: Please report bugs and feature requests on GitHub
-- **Documentation**: Check the original project documentation
-- **Community**: Node-RED community forums
+- Report issues via GitHub Issues  
+- Refer to original documentation for core functionality  
+- Join discussions in the Node-RED community  
+
+---
 
 ## 🔄 Version History
 
-### v4.2.0 (Current)
-- ✨ Added Dynamic Enable/Disable functionality
-- 📊 Enhanced array support for various data types
-- 🏷️ GEM edition branding and documentation
-- 🔧 Improved TypeScript definitions
+### v4.2.0 (Current)  
+- ✨ Introduced Dynamic Enable/Disable functionality  
+- 📊 Added extended array support  
+- 🏷️ GEM edition branding and docs  
+- 🔧 Improved TypeScript definitions  
 
-Based on **node-red-contrib-iiot-opcua v4.2.0** with additional enhancements.
+Based on **node-red-contrib-iiot-opcua v4.2.0**.  
+
+---
+
+> ⚠️ **Notice**  
+> These modifications have been introduced following the deprecation of the original project.  
+> Users and contributors are encouraged to further improve this library.  
 
 ---
 
