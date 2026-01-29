@@ -149,6 +149,10 @@
         input.trigger('input');
       }
 
+      validateEnvVar('node-config-input-dynamicUseLogin');
+      validateEnvVar('node-config-input-dynamicUser');
+      validateEnvVar('node-config-input-dynamicPassword');      
+      
       let discoveryLookupButton = $("#node-config-lookup-discovery")
       let discoveryUrlField = $("#node-config-input-discoveryUrl")
 
@@ -369,6 +373,41 @@
                 Variables must be enclosed in braces, e.g., <code>{OPCUA_USE_LOGIN}</code>
                 <br>These fields take priority over static credentials when configured.
             </div>
+            <div class="form-row">
+                <label for="node-config-input-dynamicUseLogin">
+                    <i class="fa fa-toggle-on"></i> Use Login Dynamic
+                </label>
+                <input type="text" id="node-config-input-dynamicUseLogin" 
+                      placeholder="{OPCUA_USE_LOGIN}" 
+                      style="min-width:480px">
+                <div class="form-tips" style="font-size: 11px; color: #666;">
+                    Environment variable for login flag. Expected values: true/false, 1/0, yes/no
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label for="node-config-input-dynamicUser">
+                    <i class="fa fa-user"></i> User Dynamic
+                </label>
+                <input type="text" id="node-config-input-dynamicUser" 
+                      placeholder="{OPCUA_USER}" 
+                      style="min-width:480px">
+                <div class="form-tips" style="font-size: 11px; color: #666;">
+                    Environment variable for username (e.g., {OPCUA_USER})
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label for="node-config-input-dynamicPassword">
+                    <i class="fa fa-lock"></i> Password Dynamic
+                </label>
+                <input type="text" id="node-config-input-dynamicPassword" 
+                      placeholder="{OPCUA_PASSWORD}" 
+                      style="min-width:480px">
+                <div class="form-tips" style="font-size: 11px; color: #666;">
+                    Environment variable for password (e.g., {OPCUA_PASSWORD})
+                </div>
+            </div>            
         </div>
         <div id="opcuaiiot-server-tab-strategy" style="display:none">
             <div class="form-row">
