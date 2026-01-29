@@ -141,6 +141,9 @@ export type OPCUAIIoTConnectorNode = nodered.Node<OPCUAIIoTConnectorCredentials>
   messageSecurityMode: MessageSecurityMode
   name: string
   dynamicEnable: string  // LUCAT
+  dynamicUseLogin: string  // LUCAT - Dynamic credentials
+  dynamicUser: string  // LUCAT - Dynamic credentials
+  dynamicPassword: string  // LUCAT - Dynamic credentials
   showErrors: boolean
   individualCerts: boolean
   publicCertificateFile: string | null
@@ -179,6 +182,9 @@ interface OPCUAIIoTConnectorConfigurationDef extends nodered.NodeDef {
   securityMode: string
   name: string
   dynamicEnable: string  // LUCAT
+  dynamicUseLogin: string  // LUCAT - Dynamic credentials
+  dynamicUser: string  // LUCAT - Dynamic credentials
+  dynamicPassword: string  // LUCAT - Dynamic credentials
   showErrors: boolean
   individualCerts: boolean
   publicCertificateFile: string
@@ -204,6 +210,21 @@ interface OPCUAIIoTConnectorConfigurationDef extends nodered.NodeDef {
  */
 module.exports = function (RED: nodered.NodeAPI) {
   // SOURCE-MAP-REQUIRED
+
+  /**
+   * Estrae il nome della variabile d'ambiente dalle graffe
+   * es: "{OPCUA_USER}" -> "OPCUA_USER"
+   * @param value - Stringa che potrebbe contenere una variabile tra graffe
+   * @returns Nome della variabile o null se il formato non è valido
+   */
+  // LUCAT - Dynamic credentials
+  function extractEnvVarName(value: string | undefined): string | null {
+    if (!value || typeof value !== 'string') {
+      return null
+    }
+    const match = value.match(/^\{([A-Z_][A-Z0-9_]*)\}$/)
+    return match ? match[1] : null
+  }
 
   function OPCUAIIoTConnectorConfiguration(
     this: OPCUAIIoTConnectorNode, config: OPCUAIIoTConnectorConfigurationDef) {
@@ -237,6 +258,10 @@ module.exports = function (RED: nodered.NodeAPI) {
     this.reconnectDelay = config.reconnectDelay || RECONNECT_DELAY
     this.connectionStopDelay = config.connectionStopDelay || CONNECTION_STOP_DELAY
     this.maxBadSessionRequests = parseInt(config.maxBadSessionRequests?.toString()) || 10
+    // LUCAT - Dynamic credentials
+    this.dynamicUseLogin = config.dynamicUseLogin || ''
+    this.dynamicUser = config.dynamicUser || ''
+    this.dynamicPassword = config.dynamicPassword || ''
     // LUCAT - Precompila dynamicEnable con valore esplicito
     if (!config.dynamicEnable || !config.dynamicEnable.trim()) {
       // Se vuoto, usa il valore della variabile ambiente globale o default "true"
@@ -247,13 +272,11 @@ module.exports = function (RED: nodered.NodeAPI) {
       this.dynamicEnable = config.dynamicEnable.trim()
       logger.internalDebugLog(`dynamicEnable explicitly set to: '${this.dynamicEnable}'`)
     }
-
     // LUCAT - Controllo early del connector - se disabilitato, non avviare nulla
     const disabledValues = ['0', 'false', 'FALSE', 'False', 'f', 'F', 'no', 'NO', 'No', 'off', 'OFF', 'Off']
     if (disabledValues.includes(this.dynamicEnable)) {
       internalDebugLog('Connector disabled by dynamicEnable setting: ' + this.dynamicEnable)
       this.status({ fill: 'grey', shape: 'dot', text: 'disabled by dynamicEnable' })
-
       // Setup handler per chiusura rapida
       this.on('close', (done: () => void) => {
         internalDebugLog('Closing disabled connector - no connections to close')
@@ -322,18 +345,98 @@ module.exports = function (RED: nodered.NodeAPI) {
       }
     }
 
-    if (this.loginEnabled) {
-      if (this.credentials) {
+    /**
+     * Ottiene le credenziali effettive da usare
+     * Priorità: Dynamic (env vars) > Static (config)
+     * @returns Oggetto con useLogin, user e password da utilizzare
+     */
+    // LUCAT - Dynamic credentials
+    const getEffectiveCredentials = (): { useLogin: boolean; user: string | null; password: string | null } => {
+      let useLogin = false
+      let user: string | null = null
+      let password: string | null = null
+
+      // Controlla se ci sono credenziali dinamiche valide
+      const dynamicUseLoginVar = extractEnvVarName(this.dynamicUseLogin)
+      const dynamicUserVar = extractEnvVarName(this.dynamicUser)
+      const dynamicPasswordVar = extractEnvVarName(this.dynamicPassword)
+
+      // Se ci sono variabili dinamiche valide, usale
+      if (dynamicUseLoginVar || dynamicUserVar || dynamicPasswordVar) {
+        // Leggi useLogin
+        if (dynamicUseLoginVar) {
+          const envValue = process.env[dynamicUseLoginVar]
+          useLogin = envValue === 'true' || envValue === '1' || envValue === 'yes'
+          internalDebugLog(`Dynamic useLogin from ${dynamicUseLoginVar}: ${useLogin}`)
+        } else {
+          // Se non c'è useLogin dinamico, usa quello statico
+          useLogin = this.loginEnabled || false
+        }
+
+        // Leggi user
+        if (dynamicUserVar) {
+          user = process.env[dynamicUserVar] || null
+          if (user) {
+            internalDebugLog(`Dynamic user from ${dynamicUserVar}: ${user}`)
+          } else {
+            this.warn(`Environment variable ${dynamicUserVar} not found or empty`)
+          }
+        } else if (useLogin) {
+          // Se non c'è user dinamico ma useLogin è attivo, usa quello statico
+          user = this.credentials ? this.credentials.user : null
+        }
+
+        // Leggi password
+        if (dynamicPasswordVar) {
+          password = process.env[dynamicPasswordVar] || null
+          if (password) {
+            internalDebugLog(`Dynamic password from ${dynamicPasswordVar}: [HIDDEN]`)
+          } else {
+            this.warn(`Environment variable ${dynamicPasswordVar} not found or empty`)
+          }
+        } else if (useLogin) {
+          // Se non c'è password dinamica ma useLogin è attivo, usa quella statica
+          password = this.credentials ? this.credentials.password : null
+        }
+
+        // Validazione: se useLogin è true, deve avere user e password
+        if (useLogin && (!user || !password)) {
+          this.error('useLogin is enabled but user or password is missing')
+          useLogin = false
+        }
+      } else {
+        // Nessuna variabile dinamica, usa configurazione statica
+        useLogin = this.loginEnabled || false
+        if (useLogin && this.credentials) {
+          user = this.credentials.user
+          password = this.credentials.password
+        }
+      }
+
+      return {
+        useLogin: useLogin,
+        user: user,
+        password: password
+      }
+    }
+
+    // LUCAT - Usa credenziali dinamiche con priorità su quelle statiche
+    const effectiveCredentials = getEffectiveCredentials()
+
+    if (effectiveCredentials.useLogin) {
+      if (effectiveCredentials.user && effectiveCredentials.password) {
         this.iiot.userIdentity = {
           type: UserTokenType.UserName,
-          userName: this.credentials.user,
-          password: this.credentials.password
+          userName: effectiveCredentials.user,
+          password: effectiveCredentials.password
         }
-        internalDebugLog('Connecting With Login Data On ' + this.endpoint)
+        internalDebugLog('Connecting With Login Data On ' + this.endpoint + ' (User: ' + effectiveCredentials.user + ')')
       } else {
         /* istanbul ignore next */
-        this.error(new Error('Login Enabled But No Credentials'), { payload: '' })
+        this.error(new Error('Login Enabled But No Credentials Available'), { payload: '' })
       }
+    } else {
+      internalDebugLog('Connecting Without Authentication On ' + this.endpoint)
     }
 
     /*  #########   CONNECTION  #########     */

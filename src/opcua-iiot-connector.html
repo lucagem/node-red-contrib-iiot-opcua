@@ -19,6 +19,9 @@
       loginEnabled: { value: false },
       name: { value: "LOCAL SERVER" },
       dynamicEnable: { value: "" }, // LUCAT
+      dynamicUseLogin: { value: "" }, // LUCAT - Dynamic credentials
+      dynamicUser: { value: "" }, // LUCAT - Dynamic credentials
+      dynamicPassword: { value: "" }, // LUCAT - Dynamic credentials
       showErrors: { value: false },
       securityPolicy: { value: 'None', required: true },
       securityMode: { value: 'None', required: true },
@@ -124,6 +127,26 @@
 
       } catch (err) {
         this.error(err);
+      }
+
+      // LUCAT - Dynamic Credentials Validation
+      function validateEnvVar(inputId) {
+        const input = $('#' + inputId);
+        input.on('input', function() {
+          const val = $(this).val();
+          if (val === '') {
+            $(this).css('border-color', '');
+            $(this).css('background-color', '');
+          } else if (/^\{[A-Z_][A-Z0-9_]*\}$/.test(val)) {
+            $(this).css('border-color', 'green');
+            $(this).css('background-color', '#f0fff0');
+          } else {
+            $(this).css('border-color', 'red');
+            $(this).css('background-color', '#fff0f0');
+          }
+        });
+        // Trigger on load
+        input.trigger('input');
       }
 
       let discoveryLookupButton = $("#node-config-lookup-discovery")
@@ -337,6 +360,14 @@
                     <span data-i18n="opcua-iiot-contrib.label.password"></span></label>
                     <input type="password" id="node-config-input-password">
                 </div>
+            </div>
+            <!-- LUCAT - Dynamic Credentials Section -->
+            <hr style="margin: 20px 0; border: none; border-top: 2px solid #ddd;">
+            <h4>Dynamic Credentials (Environment Variables)</h4>
+            <div class="form-tips" style="margin-bottom: 15px; padding: 10px; background-color: #f0f0f0; border-left: 4px solid #4CAF50;">
+                <strong>Note:</strong> Use environment variables for dynamic credential management. 
+                Variables must be enclosed in braces, e.g., <code>{OPCUA_USE_LOGIN}</code>
+                <br>These fields take priority over static credentials when configured.
             </div>
         </div>
         <div id="opcuaiiot-server-tab-strategy" style="display:none">
