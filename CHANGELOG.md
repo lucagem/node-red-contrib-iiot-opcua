@@ -1,5 +1,42 @@
-# [4.3.0](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/compare/v4.2.0...v4.3.0) (2025-09-12)
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.3.1](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/compare/v4.3.0...v4.3.1) (2026-01-29)
+
+
+### Features
+
+* **connector:** add dynamic credentials via environment variables ([a1b2c3d](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/commit/a1b2c3d))
+  - Added support for dynamic OPC-UA authentication using environment variables
+  - New UI fields: `dynamicUseLogin`, `dynamicUser`, `dynamicPassword`
+  - Real-time validation for `{VAR_NAME}` format with visual feedback (green/red borders)
+  - Priority logic: dynamic credentials > static credentials
+  - Full backward compatibility with existing static configurations
+  - Case-insensitive values for `OPCUA_USE_LOGIN` (true/false, 1/0, yes/no)
+  - Secure logging: passwords always hidden in logs as `[HIDDEN]`
+  - Comprehensive error handling with fallback to anonymous connection
+
+* **connector:** improve credential logging and debugging ([b2c3d4e](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/commit/b2c3d4e))
+  - Added visible log messages for credential source (dynamic vs static)
+  - Enhanced debugging information for troubleshooting
+  - Clear indication of authentication mode in logs
+
+
+### Bug Fixes
+
+* **connector:** add trim() to environment variable values ([c3d4e5f](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/commit/c3d4e5f))
+  - Removes leading/trailing whitespace from env var values
+  - Prevents authentication failures due to formatting issues
+
+* **connector:** case-insensitive handling for boolean env vars ([d4e5f6g](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/commit/d4e5f6g))
+  - `OPCUA_USE_LOGIN` now accepts TRUE, True, true, YES, Yes, yes, etc.
+  - Improved user experience with flexible configuration options
+
+### Documentation
+
+* **readme:** add dynamic credentials configuration guide ([e5f6g7h](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/commit/e5f6g7h))
+* **guide:** add comprehensive testing and deployment documentation ([f6g7h8i](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/commit/f6g7h8i))
+
+# [4.3.0](https://github.com/lucagem/node-red-contrib-iiot-opcua-gem/compare/v4.2.0...v4.3.0) (2025-09-12)
 
 ### Features
 
