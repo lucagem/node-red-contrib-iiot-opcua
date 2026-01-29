@@ -363,20 +363,33 @@ module.exports = function (RED: nodered.NodeAPI) {
 
       // Se ci sono variabili dinamiche valide, usale
       if (dynamicUseLoginVar || dynamicUserVar || dynamicPasswordVar) {
+        // LOG: Utilizzo credenziali dinamiche
+        this.log('Using dynamic credentials from environment variables')
+
         // Leggi useLogin
         if (dynamicUseLoginVar) {
           const envValue = process.env[dynamicUseLoginVar]
-          useLogin = envValue === 'true' || envValue === '1' || envValue === 'yes'
+          // Converti in lowercase per confronto case-insensitive
+          const normalizedValue = envValue?.toLowerCase()
+          useLogin = normalizedValue === 'true' ||
+            normalizedValue === '1' ||
+            normalizedValue === 'yes' ||
+            normalizedValue === 'vero'
           internalDebugLog(`Dynamic useLogin from ${dynamicUseLoginVar}: ${useLogin}`)
         } else {
           // Se non c'è useLogin dinamico, usa quello statico
           useLogin = this.loginEnabled || false
+          if (useLogin) {
+            this.log('Using static login configuration')
+          }
         }
 
         // Leggi user
         if (dynamicUserVar) {
-          user = process.env[dynamicUserVar] || null
+          const rawUser = process.env[dynamicUserVar]
+          user = rawUser?.trim() || null
           if (user) {
+            this.log(`Dynamic user: ${user} (from ${dynamicUserVar})`)
             internalDebugLog(`Dynamic user from ${dynamicUserVar}: ${user}`)
           } else {
             this.warn(`Environment variable ${dynamicUserVar} not found or empty`)
@@ -384,12 +397,16 @@ module.exports = function (RED: nodered.NodeAPI) {
         } else if (useLogin) {
           // Se non c'è user dinamico ma useLogin è attivo, usa quello statico
           user = this.credentials ? this.credentials.user : null
+          if (user) {
+            this.log('Using static username')
+          }
         }
-
         // Leggi password
         if (dynamicPasswordVar) {
-          password = process.env[dynamicPasswordVar] || null
+          const rawPassword = process.env[dynamicPasswordVar]
+          password = rawPassword?.trim() || null
           if (password) {
+            this.log(`Dynamic password loaded (from ${dynamicPasswordVar})`)
             internalDebugLog(`Dynamic password from ${dynamicPasswordVar}: [HIDDEN]`)
           } else {
             this.warn(`Environment variable ${dynamicPasswordVar} not found or empty`)
@@ -397,11 +414,14 @@ module.exports = function (RED: nodered.NodeAPI) {
         } else if (useLogin) {
           // Se non c'è password dinamica ma useLogin è attivo, usa quella statica
           password = this.credentials ? this.credentials.password : null
+          if (password) {
+            this.log('Using static password')
+          }
         }
-
         // Validazione: se useLogin è true, deve avere user e password
         if (useLogin && (!user || !password)) {
           this.error('useLogin is enabled but user or password is missing')
+          this.log('Falling back to anonymous connection')
           useLogin = false
         }
       } else {
@@ -410,9 +430,15 @@ module.exports = function (RED: nodered.NodeAPI) {
         if (useLogin && this.credentials) {
           user = this.credentials.user
           password = this.credentials.password
+          this.log('Using static credentials from node configuration')
         }
       }
-
+      // Log finale del tipo di connessione
+      if (useLogin && user) {
+        this.log(`Connecting with authentication (User: ${user})`)
+      } else {
+        this.log('Connecting without authentication')
+      }
       return {
         useLogin: useLogin,
         user: user,

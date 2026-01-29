@@ -33,4 +33,8 @@ REM imposto che voglio vedere i debug per il nodo core
 set DEBUG=opcuaIIoT:core,opcuaIIoT:write,opcuaIIoT:connector*
 REM DEBUG=opcuaIIoT:*
 set OPC_ENABLE=1
+REM login dinamico
+set OPCUA_USE_LOGIN=YES
+set OPCUA_USER=testuser  
+set OPCUA_PASSWORD=testpass123
 npx node-red --userDir ".\.node-red"
